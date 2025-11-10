@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import {
   Button,
   ButtonGroup,
@@ -5,6 +6,8 @@ import {
   Text,
   useColorModeValue
 } from '@chakra-ui/react';
+
+const MAX_VISIBLE_PAGES = 10;
 
 const Pagination = ({
   currentPage,
@@ -17,6 +20,33 @@ const Pagination = ({
   showSummary = true
 }) => {
   const summaryColor = useColorModeValue('gray.600', 'gray.400');
+
+  const pageNumbers = useMemo(() => {
+    if (totalPages <= MAX_VISIBLE_PAGES) {
+      return Array.from({ length: totalPages }, (_, index) => index + 1);
+    }
+
+    const innerSlots = MAX_VISIBLE_PAGES - 2;
+    let start = currentPage - Math.floor(innerSlots / 2);
+    let end = currentPage + Math.ceil(innerSlots / 2) - 1;
+
+    if (start < 2) {
+      start = 2;
+      end = start + innerSlots - 1;
+    }
+
+    if (end > totalPages - 1) {
+      end = totalPages - 1;
+      start = end - innerSlots + 1;
+    }
+
+    const innerPages = Array.from(
+      { length: end - start + 1 },
+      (_, index) => start + index
+    );
+
+    return [1, ...innerPages, totalPages];
+  }, [currentPage, totalPages]);
 
   const handlePageChange = (nextPage) => {
     if (nextPage < 1 || nextPage > totalPages) {
@@ -54,6 +84,17 @@ const Pagination = ({
         >
           下一页
         </Button>
+      </ButtonGroup>
+      <ButtonGroup size={size} variant="outline" colorScheme={colorScheme}>
+        {pageNumbers.map((page) => (
+          <Button
+            key={page}
+            variant={page === currentPage ? 'solid' : 'outline'}
+            onClick={() => handlePageChange(page)}
+          >
+            {page}
+          </Button>
+        ))}
       </ButtonGroup>
     </Flex>
   );

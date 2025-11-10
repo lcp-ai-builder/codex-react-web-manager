@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Avatar,
   Box,
@@ -29,7 +29,7 @@ import {
   FiChevronDown,
   FiChevronUp
 } from 'react-icons/fi';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 const menuItems = [
   { icon: FiHome, label: '仪表盘', path: '/home' },
@@ -50,6 +50,7 @@ const HomePage = () => {
     用户管理: true
   });
   const navigate = useNavigate();
+  const location = useLocation();
   const { colorMode, toggleColorMode } = useColorMode();
   const pageBg = useColorModeValue('gray.100', 'gray.900');
   const sidebarBg = useColorModeValue('white', 'gray.800');
@@ -60,6 +61,28 @@ const HomePage = () => {
     { bg: 'teal.50', color: 'teal.500' },
     { bg: 'teal.900', color: 'teal.200' }
   );
+
+  const menuPathLabelMap = useMemo(() => {
+    const map = {};
+    const collect = (items) => {
+      items.forEach((item) => {
+        if (item.path) {
+          map[item.path] = item.label;
+        }
+        if (item.children) {
+          collect(item.children);
+        }
+      });
+    };
+    collect(menuItems);
+    return map;
+  }, []);
+
+  const currentPath =
+    location.pathname.length > 1 && location.pathname.endsWith('/')
+      ? location.pathname.slice(0, -1)
+      : location.pathname;
+  const currentLabel = menuPathLabelMap[currentPath] ?? '仪表盘';
 
   return (
     <Flex h="100vh" bg={pageBg} overflow="hidden">
@@ -187,7 +210,7 @@ const HomePage = () => {
           top={0}
           zIndex={1}
         >
-          <Heading size="md">欢迎回来</Heading>
+          <Heading size="md">当前位置：{currentLabel}</Heading>
           <Flex align="center" gap={4}>
             <IconButton
               aria-label="切换配色模式"

@@ -1,9 +1,27 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
+  AlertDialog,
+  AlertDialogBody,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogOverlay,
   Badge,
   Box,
+  Button,
   Flex,
+  FormControl,
+  FormLabel,
   Heading,
+  Input,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
+  Select,
   Table,
   TableContainer,
   Tbody,
@@ -12,37 +30,33 @@ import {
   Th,
   Thead,
   Tr,
-  useColorModeValue
+  useColorModeValue,
+  useDisclosure,
+  useToast
 } from '@chakra-ui/react';
 import Pagination from '@/components/Pagination.jsx';
 import { API_BASE_URL } from '@/config/api.js';
+import { regularUsersData } from '@/data/regularUsers.js';
 
 const PAGE_SIZE = 10;
 
-const mockUsers = [
-  { id: 'U001', name: '张伟', email: 'zhangwei@example.com', status: 'active', joinedAt: '2024-01-05' },
-  { id: 'U002', name: '李娜', email: 'lina@example.com', status: 'active', joinedAt: '2024-01-08' },
-  { id: 'U003', name: '王强', email: 'wangqiang@example.com', status: 'inactive', joinedAt: '2024-01-12' },
-  { id: 'U004', name: '刘敏', email: 'liumin@example.com', status: 'active', joinedAt: '2024-01-15' },
-  { id: 'U005', name: '陈杰', email: 'chenjie@example.com', status: 'active', joinedAt: '2024-01-20' },
-  { id: 'U006', name: '赵丽', email: 'zhaoli@example.com', status: 'active', joinedAt: '2024-01-23' },
-  { id: 'U007', name: '孙浩', email: 'sunhao@example.com', status: 'inactive', joinedAt: '2024-01-28' },
-  { id: 'U008', name: '周婷', email: 'zhouting@example.com', status: 'active', joinedAt: '2024-02-02' },
-  { id: 'U009', name: '吴磊', email: 'wulei@example.com', status: 'active', joinedAt: '2024-02-06' },
-  { id: 'U010', name: '郑爽', email: 'zhengshuang@example.com', status: 'inactive', joinedAt: '2024-02-10' },
-  { id: 'U011', name: '冯媛', email: 'fengyuan@example.com', status: 'active', joinedAt: '2024-02-12' },
-  { id: 'U012', name: '褚昊', email: 'chuhao@example.com', status: 'active', joinedAt: '2024-02-15' },
-  { id: 'U013', name: '卫明', email: 'weiming@example.com', status: 'inactive', joinedAt: '2024-02-18' },
-  { id: 'U014', name: '蒋丽', email: 'jiangli@example.com', status: 'active', joinedAt: '2024-02-20' },
-  { id: 'U015', name: '沈晨', email: 'shenchen@example.com', status: 'active', joinedAt: '2024-02-24' },
-  { id: 'U016', name: '韩雪', email: 'hanxue@example.com', status: 'active', joinedAt: '2024-02-26' },
-  { id: 'U017', name: '蔡坤', email: 'caikun@example.com', status: 'inactive', joinedAt: '2024-02-28' },
-  { id: 'U018', name: '鲁洋', email: 'luyang@example.com', status: 'active', joinedAt: '2024-03-02' }
-];
-
 const RegularUsersPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
-  const totalPages = Math.ceil(mockUsers.length / PAGE_SIZE);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    status: 'active'
+  });
+  const [isSaving, setIsSaving] = useState(false);
+  const totalPages = Math.ceil(regularUsersData.length / PAGE_SIZE);
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const {
+    isOpen: isSuccessOpen,
+    onOpen: onSuccessOpen,
+    onClose: onSuccessClose
+  } = useDisclosure();
+  const successCancelRef = useRef();
+  const toast = useToast();
 
   const tableBg = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
@@ -54,9 +68,58 @@ const RegularUsersPage = () => {
     setCurrentPage(nextPage);
   };
 
+  const handleInputChange = (event) => {
+    const { name, value } = event.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleOpenModal = () => {
+    setFormData({
+      name: '',
+      email: '',
+      status: 'active'
+    });
+    onOpen();
+  };
+
+  const handleSave = async () => {
+    if (!formData.name.trim() || !formData.email.trim()) return;
+    setIsSaving(true);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+    try {
+      const response = await fetch(`${API_BASE_URL}/addNewUser`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData),
+        signal: controller.signal
+      });
+      if (!response.ok) {
+        throw new Error('Request failed');
+      }
+      onClose();
+      onSuccessOpen();
+    } catch {
+      toast({
+        title: 'api无法访问',
+        status: 'error',
+        duration: 3000,
+        isClosable: true
+      });
+    } finally {
+      clearTimeout(timeoutId);
+      setIsSaving(false);
+    }
+  };
+
   const currentUsers = useMemo(() => {
     const startIndex = (currentPage - 1) * PAGE_SIZE;
-    return mockUsers.slice(startIndex, startIndex + PAGE_SIZE);
+    return regularUsersData.slice(startIndex, startIndex + PAGE_SIZE);
   }, [currentPage]);
 
   const renderStatus = (status) => {
@@ -74,11 +137,18 @@ const RegularUsersPage = () => {
         普通用户
       </Heading>
       <Box bg={tableBg} borderRadius="lg" border="1px solid" borderColor={borderColor} boxShadow="sm">
-        <Box px={6} py={4} borderBottom="1px solid" borderColor={borderColor}>
-          <Text color={mutedText}>
-            共 {mockUsers.length} 位普通用户，默认每页展示 {PAGE_SIZE} 条数据。
-          </Text>
-        </Box>
+        <Flex
+          px={6}
+          py={4}
+          borderBottom="1px solid"
+          borderColor={borderColor}
+          align="center"
+          justify="flex-start"
+        >
+          <Button colorScheme="teal" onClick={handleOpenModal}>
+            添加新用户
+          </Button>
+        </Flex>
         <TableContainer>
           <Table variant="simple">
             <Thead>
@@ -117,12 +187,75 @@ const RegularUsersPage = () => {
             currentPage={currentPage}
             totalPages={totalPages}
             onPageChange={handlePageChange}
-            totalItems={mockUsers.length}
+            totalItems={regularUsersData.length}
             pageSize={PAGE_SIZE}
             colorScheme="teal"
           />
         </Flex>
       </Box>
+      <Modal isOpen={isOpen} onClose={onClose} isCentered>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>添加新用户</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <FormControl mb={4} isRequired>
+              <FormLabel>姓名</FormLabel>
+              <Input
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
+                placeholder="请输入用户姓名"
+              />
+            </FormControl>
+            <FormControl mb={4} isRequired>
+              <FormLabel>邮箱</FormLabel>
+              <Input
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                placeholder="user@example.com"
+              />
+            </FormControl>
+            <FormControl>
+              <FormLabel>状态</FormLabel>
+              <Select name="status" value={formData.status} onChange={handleInputChange}>
+                <option value="active">启用</option>
+                <option value="inactive">停用</option>
+              </Select>
+            </FormControl>
+          </ModalBody>
+          <ModalFooter>
+            <Button mr={3} onClick={onClose}>
+              取消
+            </Button>
+            <Button colorScheme="teal" onClick={handleSave} isLoading={isSaving}>
+              保存
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+      <AlertDialog
+        isOpen={isSuccessOpen}
+        leastDestructiveRef={successCancelRef}
+        onClose={onSuccessClose}
+        isCentered
+      >
+        <AlertDialogOverlay>
+          <AlertDialogContent>
+            <AlertDialogHeader fontSize="lg" fontWeight="bold">
+              添加完成
+            </AlertDialogHeader>
+            <AlertDialogBody>新用户已成功添加。</AlertDialogBody>
+            <AlertDialogFooter>
+              <Button ref={successCancelRef} colorScheme="teal" onClick={onSuccessClose}>
+                确定
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialogOverlay>
+      </AlertDialog>
     </Box>
   );
 };
