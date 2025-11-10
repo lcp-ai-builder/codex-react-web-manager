@@ -29,14 +29,15 @@ import {
   FiChevronDown,
   FiChevronUp
 } from 'react-icons/fi';
+import { Outlet, useNavigate } from 'react-router-dom';
 
 const menuItems = [
-  { icon: FiHome, label: '仪表盘' },
+  { icon: FiHome, label: '仪表盘', path: '/home' },
   {
     icon: FiUsers,
     label: '用户管理',
     children: [
-      { icon: FiUser, label: '普通用户' },
+      { icon: FiUser, label: '普通用户', path: '/home/users/regular' },
       { icon: FiStar, label: 'VIP用户' }
     ]
   },
@@ -48,12 +49,12 @@ const HomePage = () => {
   const [openMenus, setOpenMenus] = useState({
     用户管理: true
   });
+  const navigate = useNavigate();
   const { colorMode, toggleColorMode } = useColorMode();
   const pageBg = useColorModeValue('gray.100', 'gray.900');
   const sidebarBg = useColorModeValue('white', 'gray.800');
   const headerBg = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
-  const infoBg = useColorModeValue('white', 'gray.800');
   const textMuted = useColorModeValue('gray.600', 'gray.400');
   const menuHover = useColorModeValue(
     { bg: 'teal.50', color: 'teal.500' },
@@ -61,7 +62,7 @@ const HomePage = () => {
   );
 
   return (
-    <Flex minH="100vh" bg={pageBg}>
+    <Flex h="100vh" bg={pageBg} overflow="hidden">
       <Box
         as="nav"
         w={isCollapsed ? '88px' : { base: '260px', md: '300px' }}
@@ -70,6 +71,10 @@ const HomePage = () => {
         borderColor={borderColor}
         px={isCollapsed ? 4 : 6}
         py={8}
+        position="sticky"
+        top={0}
+        height="100vh"
+        overflowY="auto"
         transition="width 0.2s ease"
       >
         <Flex
@@ -117,7 +122,13 @@ const HomePage = () => {
                   borderRadius="md"
                   cursor="pointer"
                   _hover={menuHover}
-                  onClick={handleToggle}
+                  onClick={() => {
+                    if (item.path) {
+                      navigate(item.path);
+                      return;
+                    }
+                    handleToggle();
+                  }}
                 >
                   <Icon as={item.icon} boxSize={5} />
                   <Text
@@ -148,6 +159,7 @@ const HomePage = () => {
                           borderRadius="md"
                           cursor="pointer"
                           _hover={menuHover}
+                          onClick={() => child.path && navigate(child.path)}
                         >
                           <Icon as={child.icon} boxSize={4} />
                           <Text fontSize="sm">{child.label}</Text>
@@ -161,7 +173,7 @@ const HomePage = () => {
           })}
         </List>
       </Box>
-      <Flex direction="column" flex="1">
+      <Flex direction="column" flex="1" minH="100vh" overflow="hidden">
         <Flex
           as="header"
           h="72px"
@@ -171,6 +183,9 @@ const HomePage = () => {
           bg={headerBg}
           borderBottom="1px solid"
           borderColor={borderColor}
+          position="sticky"
+          top={0}
+          zIndex={1}
         >
           <Heading size="md">欢迎回来</Heading>
           <Flex align="center" gap={4}>
@@ -193,48 +208,11 @@ const HomePage = () => {
             </Button>
           </Flex>
         </Flex>
-        <Box as="main" flex="1" p={8}>
-          <Heading size="lg" mb={6}>
-            仪表盘概览
-          </Heading>
-          <Flex gap={6} flexWrap="wrap">
-            <InfoCard title="今日访问量" value="1,245" />
-            <InfoCard title="新增用户" value="56" />
-            <InfoCard title="待处理工单" value="8" />
-          </Flex>
-          <Box mt={10} bg={infoBg} borderRadius="lg" boxShadow="sm" p={6}>
-            <Heading size="md" mb={4}>
-              最近活动
-            </Heading>
-            <Text color={textMuted}>这里展示系统的最新动态与提醒。</Text>
-          </Box>
+        <Box as="main" flex="1" p={8} overflowY="auto">
+          <Outlet />
         </Box>
       </Flex>
     </Flex>
-  );
-};
-
-const InfoCard = ({ title, value }) => {
-  const cardBg = useColorModeValue('white', 'gray.800');
-  const cardShadow = useColorModeValue('sm', 'dark-lg');
-  const labelColor = useColorModeValue('gray.500', 'gray.400');
-
-  return (
-    <Box
-      flex="1"
-      minW="240px"
-      bg={cardBg}
-      borderRadius="lg"
-      boxShadow={cardShadow}
-      p={6}
-    >
-      <Text fontSize="sm" color={labelColor}>
-        {title}
-      </Text>
-      <Text fontSize="3xl" fontWeight="bold" mt={2}>
-        {value}
-      </Text>
-    </Box>
   );
 };
 

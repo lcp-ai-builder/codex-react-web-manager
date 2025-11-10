@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { ChakraProvider, ColorModeScript, extendTheme } from '@chakra-ui/react';
 import { BrowserRouter } from 'react-router-dom';
-import App from './App.jsx';
+import App from '@/App.jsx';
 
 const theme = extendTheme({
   config: {
