@@ -21,6 +21,7 @@ const Pagination = ({
 }) => {
   const summaryColor = useColorModeValue('gray.600', 'gray.400');
 
+  // 根据当前页和总页数动态生成中间可点击的页码
   const pageNumbers = useMemo(() => {
     if (totalPages <= MAX_VISIBLE_PAGES) {
       return Array.from({ length: totalPages }, (_, index) => index + 1);
@@ -48,6 +49,7 @@ const Pagination = ({
     return [1, ...innerPages, totalPages];
   }, [currentPage, totalPages]);
 
+  // 统一处理上下页以及具体页码的跳转
   const handlePageChange = (nextPage) => {
     if (nextPage < 1 || nextPage > totalPages) {
       return;
@@ -63,6 +65,7 @@ const Pagination = ({
       gap={4}
       w="100%"
     >
+      {/* 左侧可选的统计文案 */}
       {showSummary && (
         <Text color={summaryColor}>
           第 {currentPage} 页 / 共 {totalPages} 页
@@ -71,6 +74,7 @@ const Pagination = ({
             : ''}
         </Text>
       )}
+      {/* 上一页 / 下一页 */}
       <ButtonGroup size={size} variant="outline" colorScheme={colorScheme}>
         <Button
           onClick={() => handlePageChange(currentPage - 1)}
@@ -85,6 +89,7 @@ const Pagination = ({
           下一页
         </Button>
       </ButtonGroup>
+      {/* 数字页码，点击可直接跳转 */}
       <ButtonGroup size={size} variant="outline" colorScheme={colorScheme}>
         {pageNumbers.map((page) => (
           <Button

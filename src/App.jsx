@@ -1,20 +1,8 @@
-import { Route, Routes, Navigate } from 'react-router-dom';
-import LoginPage from '@/pages/Login.jsx';
-import HomePage from '@/pages/Home.jsx';
-import DashboardPage from '@/pages/Dashboard.jsx';
-import RegularUsersPage from '@/pages/RegularUsers.jsx';
+// App 只负责渲染路由集合，具体配置放在 routes/index.jsx
+import AppRoutes from '@/routes/index.jsx';
 
 const App = () => {
-  return (
-    <Routes>
-      <Route path="/" element={<LoginPage />} />
-      <Route path="/home" element={<HomePage />}>
-        <Route index element={<DashboardPage />} />
-        <Route path="users/regular" element={<RegularUsersPage />} />
-      </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
-  );
+  return <AppRoutes />;
 };
 
 export default App;

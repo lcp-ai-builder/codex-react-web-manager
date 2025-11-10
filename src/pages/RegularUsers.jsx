@@ -38,10 +38,11 @@ import Pagination from '@/components/Pagination.jsx';
 import { API_BASE_URL } from '@/config/api.js';
 import { regularUsersData } from '@/data/regularUsers.js';
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 10; // 统一设置分页大小，方便后续联动
 
 const RegularUsersPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
+  // 表单仅用于演示添加用户的结构，不会真的写入 mock 数据
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -62,12 +63,29 @@ const RegularUsersPage = () => {
   const borderColor = useColorModeValue('gray.200', 'gray.700');
   const mutedText = useColorModeValue('gray.600', 'gray.400');
 
+  // 切换分页时顺便访问测试接口，模拟向后端汇报分页信息
   const handlePageChange = (nextPage) => {
     if (nextPage < 1 || nextPage > totalPages) return;
-    fetch(`${API_BASE_URL}/check1?page=${nextPage}`).catch(() => {});
-    setCurrentPage(nextPage);
+    fetch(`${API_BASE_URL}/check1?page=${nextPage}`)
+      .then(async (response) => {
+        if (typeof response?.json === 'function') {
+          return response.json();
+        }
+        return response;
+      })
+      .then((data) => {
+        // 打印接口返回，便于调试
+        console.log('分页接口返回：', data);
+      })
+      .catch((error) => {
+        console.log('分页接口异常：', error);
+      })
+      .finally(() => {
+        setCurrentPage(nextPage);
+      });
   };
 
+  // 实时收集表单输入
   const handleInputChange = (event) => {
     const { name, value } = event.target;
     setFormData((prev) => ({
@@ -76,6 +94,7 @@ const RegularUsersPage = () => {
     }));
   };
 
+  // 打开弹窗前重置表单，保持体验一致
   const handleOpenModal = () => {
     setFormData({
       name: '',
@@ -85,6 +104,7 @@ const RegularUsersPage = () => {
     onOpen();
   };
 
+  // 保存数据：调用 /addNewUser 接口，并在 3 秒内无响应时给出提示
   const handleSave = async () => {
     if (!formData.name.trim() || !formData.email.trim()) return;
     setIsSaving(true);
@@ -117,6 +137,7 @@ const RegularUsersPage = () => {
     }
   };
 
+  // 根据当前页裁剪出需要展示的 10 条数据
   const currentUsers = useMemo(() => {
     const startIndex = (currentPage - 1) * PAGE_SIZE;
     return regularUsersData.slice(startIndex, startIndex + PAGE_SIZE);

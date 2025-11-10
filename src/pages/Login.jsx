@@ -24,6 +24,7 @@ const LoginPage = () => {
   const cardShadow = useColorModeValue('lg', 'dark-lg');
   const subTextColor = useColorModeValue('gray.500', 'gray.400');
 
+  // 这里只做 Demo，因此模拟登录行为
   const handleLogin = (event) => {
     event.preventDefault();
     setLoading(true);
@@ -54,6 +55,7 @@ const LoginPage = () => {
             onClick={toggleColorMode}
             variant="ghost"
             colorScheme="teal"
+            /* 允许用户在登录页就体验暗色/亮色切换 */
           />
         </Flex>
         <FormControl id="email" mb={4}>

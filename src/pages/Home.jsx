@@ -31,6 +31,7 @@ import {
 } from 'react-icons/fi';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 
+// 左侧菜单定义：支持多级、图标和路由跳转
 const menuItems = [
   { icon: FiHome, label: '仪表盘', path: '/home' },
   {
@@ -62,6 +63,7 @@ const HomePage = () => {
     { bg: 'teal.900', color: 'teal.200' }
   );
 
+  // 将菜单项拍平成 path->label 映射，方便抬头展示“当前位置”
   const menuPathLabelMap = useMemo(() => {
     const map = {};
     const collect = (items) => {
@@ -100,6 +102,7 @@ const HomePage = () => {
         overflowY="auto"
         transition="width 0.2s ease"
       >
+        {/* 侧边栏顶部：标题 + 折叠按钮 */}
         <Flex
           align="center"
           justify={isCollapsed ? 'center' : 'space-between'}
@@ -120,6 +123,7 @@ const HomePage = () => {
             colorScheme="teal"
           />
         </Flex>
+        {/* 菜单区域，支持 hover 反馈和二级折叠 */}
         <List spacing={2}>
           {menuItems.map((item) => {
             const hasChildren = Boolean(item.children?.length);
@@ -196,6 +200,7 @@ const HomePage = () => {
           })}
         </List>
       </Box>
+      {/* 右侧主区域：顶部固定，下面 Outlet 滚动 */}
       <Flex direction="column" flex="1" minH="100vh" overflow="hidden">
         <Flex
           as="header"
