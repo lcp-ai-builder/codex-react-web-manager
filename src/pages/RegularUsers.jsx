@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   AlertDialog,
   AlertDialogBody,
@@ -34,7 +34,7 @@ import {
   useDisclosure,
   useToast,
   IconButton,
-  HStack
+  HStack,
 } from '@chakra-ui/react';
 import { FiEdit2, FiTrash2 } from 'react-icons/fi';
 import Pagination from '@/components/Pagination.jsx';
@@ -47,16 +47,17 @@ const RegularUsersPage = () => {
   // 将模拟数据放入本地状态，方便增删改实时生效
   const [users, setUsers] = useState(regularUsersData);
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(regularUsersData.length);
   // 表单仅用于演示添加用户的结构，不会真的写入 mock 数据
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    status: 'active'
+    status: 'active',
   });
   const [editFormData, setEditFormData] = useState({
     name: '',
     email: '',
-    status: 'active'
+    status: 'active',
   });
   // 当前被编辑或删除的那条记录
   const [selectedUser, setSelectedUser] = useState(null);
@@ -65,26 +66,26 @@ const RegularUsersPage = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const totalPages = Math.max(1, Math.ceil(users.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
   const {
     isOpen: isAddOpen,
     onOpen: onAddOpen,
-    onClose: onAddClose
+    onClose: onAddClose,
   } = useDisclosure();
   const {
     isOpen: isEditOpen,
     onOpen: onEditOpen,
-    onClose: onEditClose
+    onClose: onEditClose,
   } = useDisclosure();
   const {
     isOpen: isSuccessOpen,
     onOpen: onSuccessOpen,
-    onClose: onSuccessClose
+    onClose: onSuccessClose,
   } = useDisclosure();
   const {
     isOpen: isDeleteOpen,
     onOpen: onDeleteOpen,
-    onClose: onDeleteClose
+    onClose: onDeleteClose,
   } = useDisclosure();
   const successCancelRef = useRef();
   const deleteCancelRef = useRef();
@@ -94,26 +95,71 @@ const RegularUsersPage = () => {
   const borderColor = useColorModeValue('gray.200', 'gray.700');
   const mutedText = useColorModeValue('gray.600', 'gray.400');
 
-  // 切换分页时顺便访问测试接口，模拟向后端汇报分页信息
+  const fetchUsers = useCallback(
+    async (page = 1) => {
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/getAll?page=${page}&pageSize=${PAGE_SIZE}`
+        );
+        const payload = await response
+          .json()
+          .catch(() => ({
+            data: regularUsersData,
+            total: regularUsersData.length,
+          }));
+        if (!response.ok) {
+          throw new Error('Request failed');
+        }
+        const listCandidate = Array.isArray(payload)
+          ? payload
+          : Array.isArray(payload?.data?.list)
+          ? payload.data.list
+          : Array.isArray(payload?.data?.records)
+          ? payload.data.records
+          : Array.isArray(payload?.data)
+          ? payload.data
+          : Array.isArray(payload?.list)
+          ? payload.list
+          : Array.isArray(payload?.records)
+          ? payload.records
+          : [];
+        const list = listCandidate.length ? listCandidate : regularUsersData;
+        const total =
+          typeof payload?.data?.total === 'number'
+            ? payload.data.total
+            : typeof payload?.data?.pagination?.total === 'number'
+            ? payload.data.pagination.total
+            : typeof payload?.total === 'number'
+            ? payload.total
+            : list.length;
+        setUsers(list);
+        setTotalItems(total);
+        setCurrentPage(page);
+      } catch (error) {
+        console.log('获取用户列表失败：', error);
+        toast({
+          title: '获取用户列表失败',
+          status: 'error',
+          duration: 3000,
+          isClosable: true,
+        });
+        if (page === 1) {
+          setUsers(regularUsersData);
+          setTotalItems(regularUsersData.length);
+        }
+      }
+    },
+    [toast]
+  );
+
+  useEffect(() => {
+    fetchUsers(1);
+  }, [fetchUsers]);
+
+  // 切换分页时访问正式接口
   const handlePageChange = (nextPage) => {
     if (nextPage < 1 || nextPage > totalPages) return;
-    fetch(`${API_BASE_URL}/check1?page=${nextPage}`)
-      .then(async (response) => {
-        if (typeof response?.json === 'function') {
-          return response.json();
-        }
-        return response;
-      })
-      .then((data) => {
-        // 打印接口返回，便于调试
-        console.log('分页接口返回：', data);
-      })
-      .catch((error) => {
-        console.log('分页接口异常：', error);
-      })
-      .finally(() => {
-        setCurrentPage(nextPage);
-      });
+    fetchUsers(nextPage);
   };
 
   // 实时收集表单输入
@@ -121,7 +167,7 @@ const RegularUsersPage = () => {
     const { name, value } = event.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -130,7 +176,7 @@ const RegularUsersPage = () => {
     setFormData({
       name: '',
       email: '',
-      status: 'active'
+      status: 'active',
     });
     onAddOpen();
   };
@@ -145,10 +191,10 @@ const RegularUsersPage = () => {
       const response = await fetch(`${API_BASE_URL}/addNewUser`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify(formData),
-        signal: controller.signal
+        signal: controller.signal,
       });
       if (!response.ok) {
         throw new Error('Request failed');
@@ -159,9 +205,9 @@ const RegularUsersPage = () => {
         {
           id: `U${String(prev.length + 1).padStart(3, '0')}`,
           ...formData,
-          joinedAt: new Date().toISOString().slice(0, 10)
+          joinedAt: new Date().toISOString().slice(0, 10),
         },
-        ...prev
+        ...prev,
       ]);
       onSuccessOpen();
     } catch {
@@ -169,19 +215,13 @@ const RegularUsersPage = () => {
         title: 'api无法访问',
         status: 'error',
         duration: 3000,
-        isClosable: true
+        isClosable: true,
       });
     } finally {
       clearTimeout(timeoutId);
       setIsSaving(false);
     }
   };
-
-  // 根据当前页裁剪出需要展示的 10 条数据
-  const currentUsers = useMemo(() => {
-    const startIndex = (currentPage - 1) * PAGE_SIZE;
-    return users.slice(startIndex, startIndex + PAGE_SIZE);
-  }, [currentPage, users]);
 
   // 根据状态展示不同颜色的 Badge
   const renderStatus = (status) => {
@@ -195,10 +235,16 @@ const RegularUsersPage = () => {
 
   return (
     <Box p={{ base: 4, md: 8 }}>
-      <Heading size="lg" mb={6}>
+      {/* <Heading size="lg" mb={6}>
         普通用户
-      </Heading>
-      <Box bg={tableBg} borderRadius="lg" border="1px solid" borderColor={borderColor} boxShadow="sm">
+      </Heading> */}
+      <Box
+        bg={tableBg}
+        borderRadius="lg"
+        border="1px solid"
+        borderColor={borderColor}
+        boxShadow="sm"
+      >
         {/* 表格头部：仅放一个“添加”按钮 */}
         <Flex
           px={6}
@@ -225,7 +271,7 @@ const RegularUsersPage = () => {
               </Tr>
             </Thead>
             <Tbody>
-              {currentUsers.map((user) => (
+              {users.map((user) => (
                 <Tr key={user.id}>
                   <Td>{user.id}</Td>
                   <Td>{user.name}</Td>
@@ -245,7 +291,7 @@ const RegularUsersPage = () => {
                           setEditFormData({
                             name: user.name,
                             email: user.email,
-                            status: user.status
+                            status: user.status,
                           });
                           onEditOpen();
                         }}
@@ -283,7 +329,7 @@ const RegularUsersPage = () => {
             currentPage={currentPage}
             totalPages={totalPages}
             onPageChange={handlePageChange}
-            totalItems={users.length}
+            totalItems={totalItems}
             pageSize={PAGE_SIZE}
             colorScheme="teal"
           />
@@ -317,7 +363,11 @@ const RegularUsersPage = () => {
             </FormControl>
             <FormControl>
               <FormLabel>状态</FormLabel>
-              <Select name="status" value={formData.status} onChange={handleInputChange}>
+              <Select
+                name="status"
+                value={formData.status}
+                onChange={handleInputChange}
+              >
                 <option value="active">启用</option>
                 <option value="inactive">停用</option>
               </Select>
@@ -327,7 +377,11 @@ const RegularUsersPage = () => {
             <Button mr={3} onClick={onAddClose}>
               取消
             </Button>
-            <Button colorScheme="teal" onClick={handleSave} isLoading={isSaving}>
+            <Button
+              colorScheme="teal"
+              onClick={handleSave}
+              isLoading={isSaving}
+            >
               保存
             </Button>
           </ModalFooter>
@@ -348,7 +402,7 @@ const RegularUsersPage = () => {
                 onChange={(event) =>
                   setEditFormData((prev) => ({
                     ...prev,
-                    [event.target.name]: event.target.value
+                    [event.target.name]: event.target.value,
                   }))
                 }
                 placeholder="请输入用户姓名"
@@ -363,7 +417,7 @@ const RegularUsersPage = () => {
                 onChange={(event) =>
                   setEditFormData((prev) => ({
                     ...prev,
-                    [event.target.name]: event.target.value
+                    [event.target.name]: event.target.value,
                   }))
                 }
                 placeholder="user@example.com"
@@ -377,7 +431,7 @@ const RegularUsersPage = () => {
                 onChange={(event) =>
                   setEditFormData((prev) => ({
                     ...prev,
-                    [event.target.name]: event.target.value
+                    [event.target.name]: event.target.value,
                   }))
                 }
               >
@@ -399,12 +453,12 @@ const RegularUsersPage = () => {
                   const response = await fetch(`${API_BASE_URL}/editUserInfo`, {
                     method: 'POST',
                     headers: {
-                      'Content-Type': 'application/json'
+                      'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
                       id: selectedUser.id,
-                      ...editFormData
-                    })
+                      ...editFormData,
+                    }),
                   });
                   if (!response.ok) {
                     throw new Error('Request failed');
@@ -421,7 +475,7 @@ const RegularUsersPage = () => {
                     title: '用户已更新',
                     status: 'success',
                     duration: 2000,
-                    isClosable: true
+                    isClosable: true,
                   });
                   onEditClose();
                 } catch (error) {
@@ -429,7 +483,7 @@ const RegularUsersPage = () => {
                     title: '更新失败',
                     status: 'error',
                     duration: 3000,
-                    isClosable: true
+                    isClosable: true,
                   });
                 } finally {
                   setIsUpdating(false);
@@ -456,7 +510,11 @@ const RegularUsersPage = () => {
             </AlertDialogHeader>
             <AlertDialogBody>新用户已成功添加。</AlertDialogBody>
             <AlertDialogFooter>
-              <Button ref={successCancelRef} colorScheme="teal" onClick={onSuccessClose}>
+              <Button
+                ref={successCancelRef}
+                colorScheme="teal"
+                onClick={onSuccessClose}
+              >
                 确定
               </Button>
             </AlertDialogFooter>
@@ -502,13 +560,16 @@ const RegularUsersPage = () => {
                   if (!deleteTarget) return;
                   setIsDeleting(true);
                   try {
-                    const response = await fetch(`${API_BASE_URL}/deleteUserInfo`, {
-                      method: 'POST',
-                      headers: {
-                        'Content-Type': 'application/json'
-                      },
-                      body: JSON.stringify({ id: deleteTarget.id })
-                    });
+                    const response = await fetch(
+                      `${API_BASE_URL}/deleteUserInfo`,
+                      {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ id: deleteTarget.id }),
+                      }
+                    );
                     if (!response.ok) {
                       throw new Error('Request failed');
                     }
@@ -530,7 +591,7 @@ const RegularUsersPage = () => {
                       title: '用户已删除',
                       status: 'success',
                       duration: 2000,
-                      isClosable: true
+                      isClosable: true,
                     });
                     setDeleteTarget(null);
                     onDeleteClose();
@@ -539,7 +600,7 @@ const RegularUsersPage = () => {
                       title: '删除失败',
                       status: 'error',
                       duration: 3000,
-                      isClosable: true
+                      isClosable: true,
                     });
                   } finally {
                     setIsDeleting(false);
