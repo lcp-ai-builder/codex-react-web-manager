@@ -90,6 +90,7 @@ const LoginPage = () => {
             onClick={toggleColorMode}
             variant="ghost"
             colorScheme="teal"
+            /* 允许用户在登录页就体验暗色/亮色切换 */
           />
         </Flex>
         <FormControl id="userId" mb={4}>

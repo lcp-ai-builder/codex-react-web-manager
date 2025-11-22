@@ -4,6 +4,7 @@ import { ChakraProvider, ColorModeScript, extendTheme } from '@chakra-ui/react';
 import { BrowserRouter } from 'react-router-dom';
 import App from '@/App.jsx';
 
+// 全局主题：配置初始配色方案，后续 Chakra 组件都会遵守
 const theme = extendTheme({
   config: {
     initialColorMode: 'light',
@@ -11,10 +12,13 @@ const theme = extendTheme({
   },
 });
 
+// React18 新的渲染方式，包裹 Chakra Provider 和路由
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <ChakraProvider theme={theme}>
+      {/* ColorModeScript 让颜色模式在首次渲染时就正确 */}
       <ColorModeScript initialColorMode={theme.config.initialColorMode} />
+      {/* BrowserRouter 负责监听 URL 并渲染 <App /> 中定义的路由 */}
       <BrowserRouter>
         <App />
       </BrowserRouter>

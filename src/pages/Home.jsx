@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Avatar,
   Box,
@@ -29,16 +29,18 @@ import {
   FiChevronDown,
   FiChevronUp,
 } from 'react-icons/fi';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 
+// 左侧菜单定义：支持多级、图标和路由跳转
 const menuItems = [
-  { icon: FiHome, label: '仪表盘' },
+  { icon: FiHome, label: '仪表盘', path: '/home' },
   {
     icon: FiUsers,
     label: '用户管理',
     children: [
-      { icon: FiUser, label: '普通用户' },
-      { icon: FiStar, label: 'VIP用户' },
-    ],
+      { icon: FiUser, label: '普通用户', path: '/home/users/regular' },
+      { icon: FiStar, label: 'VIP用户' }
+    ]
   },
   { icon: FiSettings, label: '系统设置' },
 ];
@@ -48,20 +50,44 @@ const HomePage = () => {
   const [openMenus, setOpenMenus] = useState({
     用户管理: true,
   });
+  const navigate = useNavigate();
+  const location = useLocation();
   const { colorMode, toggleColorMode } = useColorMode();
   const pageBg = useColorModeValue('gray.100', 'gray.900');
   const sidebarBg = useColorModeValue('white', 'gray.800');
   const headerBg = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
-  const infoBg = useColorModeValue('white', 'gray.800');
   const textMuted = useColorModeValue('gray.600', 'gray.400');
   const menuHover = useColorModeValue(
     { bg: 'teal.50', color: 'teal.500' },
     { bg: 'teal.900', color: 'teal.200' }
   );
 
+  // 将菜单项拍平成 path->label 映射，方便抬头展示“当前位置”
+  const menuPathLabelMap = useMemo(() => {
+    const map = {};
+    const collect = (items) => {
+      items.forEach((item) => {
+        if (item.path) {
+          map[item.path] = item.label;
+        }
+        if (item.children) {
+          collect(item.children);
+        }
+      });
+    };
+    collect(menuItems);
+    return map;
+  }, []);
+
+  const currentPath =
+    location.pathname.length > 1 && location.pathname.endsWith('/')
+      ? location.pathname.slice(0, -1)
+      : location.pathname;
+  const currentLabel = menuPathLabelMap[currentPath] ?? '仪表盘';
+
   return (
-    <Flex minH="100vh" bg={pageBg}>
+    <Flex h="100vh" bg={pageBg} overflow="hidden">
       <Box
         as="nav"
         w={isCollapsed ? '88px' : { base: '260px', md: '300px' }}
@@ -70,8 +96,13 @@ const HomePage = () => {
         borderColor={borderColor}
         px={isCollapsed ? 4 : 6}
         py={8}
+        position="sticky"
+        top={0}
+        height="100vh"
+        overflowY="auto"
         transition="width 0.2s ease"
       >
+        {/* 侧边栏顶部：标题 + 折叠按钮 */}
         <Flex
           align="center"
           justify={isCollapsed ? 'center' : 'space-between'}
@@ -92,6 +123,7 @@ const HomePage = () => {
             colorScheme="teal"
           />
         </Flex>
+        {/* 菜单区域，支持 hover 反馈和二级折叠 */}
         <List spacing={2}>
           {menuItems.map((item) => {
             const hasChildren = Boolean(item.children?.length);
@@ -117,7 +149,13 @@ const HomePage = () => {
                   borderRadius="md"
                   cursor="pointer"
                   _hover={menuHover}
-                  onClick={handleToggle}
+                  onClick={() => {
+                    if (item.path) {
+                      navigate(item.path);
+                      return;
+                    }
+                    handleToggle();
+                  }}
                 >
                   <Icon as={item.icon} boxSize={5} />
                   <Text
@@ -148,6 +186,7 @@ const HomePage = () => {
                           borderRadius="md"
                           cursor="pointer"
                           _hover={menuHover}
+                          onClick={() => child.path && navigate(child.path)}
                         >
                           <Icon as={child.icon} boxSize={4} />
                           <Text fontSize="sm">{child.label}</Text>
@@ -161,7 +200,8 @@ const HomePage = () => {
           })}
         </List>
       </Box>
-      <Flex direction="column" flex="1">
+      {/* 右侧主区域：顶部固定，下面 Outlet 滚动 */}
+      <Flex direction="column" flex="1" minH="100vh" overflow="hidden">
         <Flex
           as="header"
           h="72px"
@@ -171,8 +211,11 @@ const HomePage = () => {
           bg={headerBg}
           borderBottom="1px solid"
           borderColor={borderColor}
+          position="sticky"
+          top={0}
+          zIndex={1}
         >
-          <Heading size="md">欢迎回来</Heading>
+          <Heading size="md">当前位置：{currentLabel}</Heading>
           <Flex align="center" gap={4}>
             <IconButton
               aria-label="切换配色模式"
@@ -197,48 +240,11 @@ const HomePage = () => {
             </Button>
           </Flex>
         </Flex>
-        <Box as="main" flex="1" p={8}>
-          <Heading size="lg" mb={6}>
-            仪表盘概览
-          </Heading>
-          <Flex gap={6} flexWrap="wrap">
-            <InfoCard title="今日访问量" value="1,245" />
-            <InfoCard title="新增用户" value="56" />
-            <InfoCard title="待处理工单" value="8" />
-          </Flex>
-          <Box mt={10} bg={infoBg} borderRadius="lg" boxShadow="sm" p={6}>
-            <Heading size="md" mb={4}>
-              最近活动
-            </Heading>
-            <Text color={textMuted}>这里展示系统的最新动态与提醒。</Text>
-          </Box>
+        <Box as="main" flex="1" p={8} overflowY="auto">
+          <Outlet />
         </Box>
       </Flex>
     </Flex>
-  );
-};
-
-const InfoCard = ({ title, value }) => {
-  const cardBg = useColorModeValue('white', 'gray.800');
-  const cardShadow = useColorModeValue('sm', 'dark-lg');
-  const labelColor = useColorModeValue('gray.500', 'gray.400');
-
-  return (
-    <Box
-      flex="1"
-      minW="240px"
-      bg={cardBg}
-      borderRadius="lg"
-      boxShadow={cardShadow}
-      p={6}
-    >
-      <Text fontSize="sm" color={labelColor}>
-        {title}
-      </Text>
-      <Text fontSize="3xl" fontWeight="bold" mt={2}>
-        {value}
-      </Text>
-    </Box>
   );
 };
 
