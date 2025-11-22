@@ -11,28 +11,63 @@ import {
   Text,
   useColorMode,
   useColorModeValue,
+  useToast,
 } from '@chakra-ui/react';
 import { MoonIcon, SunIcon } from '@chakra-ui/icons';
 import { useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '@/config/api';
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const [userId, setUserId] = useState('zhang3');
+  const [password, setPassword] = useState('aaaaaa');
   const [loading, setLoading] = useState(false);
   const { colorMode, toggleColorMode } = useColorMode();
+  const toast = useToast();
   const pageBg = useColorModeValue('gray.50', 'gray.900');
   const cardBg = useColorModeValue('white', 'gray.800');
   const cardShadow = useColorModeValue('lg', 'dark-lg');
   const subTextColor = useColorModeValue('gray.500', 'gray.400');
 
-  // 这里只做 Demo，因此模拟登录行为
-  const handleLogin = (event) => {
+  const handleLogin = async (event) => {
     event.preventDefault();
     setLoading(true);
-    // simulate auth flow
-    setTimeout(() => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        navigate('/home');
+      } else {
+        toast({
+          title: '登录失败，请重试',
+          status: 'error',
+          duration: 3000,
+          isClosable: true,
+          position: 'top',
+        });
+      }
+    } catch (err) {
+      toast({
+        title: '登录请求失败，请稍后重试',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+        position: 'top',
+      });
+    } finally {
       setLoading(false);
-      navigate('/home');
-    }, 500);
+    }
   };
 
   return (
@@ -58,13 +93,24 @@ const LoginPage = () => {
             /* 允许用户在登录页就体验暗色/亮色切换 */
           />
         </Flex>
-        <FormControl id="email" mb={4}>
-          <FormLabel>邮箱</FormLabel>
-          <Input type="email" placeholder="admin@example.com" required />
+        <FormControl id="userId" mb={4}>
+          <FormLabel>用户ID</FormLabel>
+          <Input
+            placeholder="请输入用户ID"
+            value={userId}
+            onChange={(e) => setUserId(e.target.value)}
+            required
+          />
         </FormControl>
         <FormControl id="password" mb={6}>
           <FormLabel>密码</FormLabel>
-          <Input type="password" placeholder="请输入密码" required />
+          <Input
+            type="password"
+            placeholder="请输入密码"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
         </FormControl>
         <Button
           type="submit"
@@ -75,9 +121,6 @@ const LoginPage = () => {
         >
           登录
         </Button>
-        <Text fontSize="sm" color={subTextColor} textAlign="center" mt={4}>
-          使用任意账户信息即可体验示例系统
-        </Text>
       </Box>
     </Flex>
   );

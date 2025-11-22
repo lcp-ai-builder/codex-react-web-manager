@@ -13,7 +13,7 @@ import {
   Text,
   VStack,
   useColorMode,
-  useColorModeValue
+  useColorModeValue,
 } from '@chakra-ui/react';
 import {
   FiHome,
@@ -27,7 +27,7 @@ import {
   FiUser,
   FiStar,
   FiChevronDown,
-  FiChevronUp
+  FiChevronUp,
 } from 'react-icons/fi';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 
@@ -42,13 +42,13 @@ const menuItems = [
       { icon: FiStar, label: 'VIP用户' }
     ]
   },
-  { icon: FiSettings, label: '系统设置' }
+  { icon: FiSettings, label: '系统设置' },
 ];
 
 const HomePage = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [openMenus, setOpenMenus] = useState({
-    用户管理: true
+    用户管理: true,
   });
   const navigate = useNavigate();
   const location = useLocation();
@@ -133,7 +133,7 @@ const HomePage = () => {
               if (!hasChildren || isCollapsed) return;
               setOpenMenus((prev) => ({
                 ...prev,
-                [item.label]: !prev[item.label]
+                [item.label]: !prev[item.label],
               }));
             };
 
@@ -231,7 +231,11 @@ const HomePage = () => {
                 admin@example.com
               </Text>
             </VStack>
-            <Button leftIcon={<FiLogOut />} variant="outline" colorScheme="teal">
+            <Button
+              leftIcon={<FiLogOut />}
+              variant="outline"
+              colorScheme="teal"
+            >
               退出
             </Button>
           </Flex>

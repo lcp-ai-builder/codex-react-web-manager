@@ -19,6 +19,9 @@ dist/
 # Environment files
 .env*
 
+!.env.development
+!.env.production
+
 # OS-specific junk
 .DS_Store
 Thumbs.db

@@ -11,6 +11,23 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    host: '0.0.0.0',
+    // host: '192.168.127.128',
+    host: true,
+    strictPort: true,
+    origin: 'http://192.168.127.128:5173',
+    // 如果需要固定 HMR 连接，可取消注释下方配置
+    // hmr: {
+    //   host: '192.168.127.128',
+    //   protocol: 'ws',
+    //   port: 5173,
+    //   clientPort: 5173
+    // },
+    proxy: {
+      '/api': {
+        target: 'http://192.168.127.128:8080',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      },
+    },
   },
 });

@@ -8,8 +8,8 @@ import App from '@/App.jsx';
 const theme = extendTheme({
   config: {
     initialColorMode: 'light',
-    useSystemColorMode: false
-  }
+    useSystemColorMode: true,
+  },
 });
 
 // React18 新的渲染方式，包裹 Chakra Provider 和路由

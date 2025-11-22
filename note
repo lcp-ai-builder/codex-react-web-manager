@@ -1,5 +1,4 @@
-table中每一行增加编辑和删除图标。编辑图表弹出对话框编辑数据，并有更新和取消按钮，更新按钮访问api是/editUserInfo，删除按钮访问api是/deleteUserInfo，删除时有确认提示框。两个按钮的操作同时影响到本地数据和远程api数据。
+ 使用说明:
 
----------------路由配置提取到单独的文件
-
----------------查询用户数据的api访问后，打印返回结果
+  - 本地开发:npm run dev 自动读取 .env.development,接口走 /api → 代理。
+  - 打包生产:npm run build 自动读取 .env.production,接口指向 http://www.lcp.com。将 dist/ 部署即可。

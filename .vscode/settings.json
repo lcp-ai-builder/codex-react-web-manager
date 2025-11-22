@@ -1,4 +1,25 @@
 {
   "cSpell.enabled": false,
-  "git.enableCommitSigning": true
+  "git.enableCommitSigning": true,
+  "editor.fontFamily": "'Google Sans Code','Monaspace Neon',Monaco,'JetBrains Mono','WenQuanYi Micro Hei Mono','Microsoft YaHei','Fira Code', Consolas, 'Courier New', monospace",
+  "eslint.enable": true,
+  "explorer.fileNesting.enabled": true,
+  "explorer.fileNesting.patterns": {
+    ".config": "index.html,.prettierrc*,eslint*,.eslintignore,.eslintrc.js,.gitignore,jsconfig.json,tsconfig.json,vite.config.js,package*,.env*",
+    ".other": "description,note,AGENTS.md",
+    ".shell": "*.sh"
+  },
+  "explorer.sortOrder": "type",
+  "files.exclude": {
+    "**/.DS_Store": true,
+    "**/.git": true,
+    "**/.hg": true,
+    "**/.idea": true,
+    "**/.svn": true,
+    "**/Thumbs.db": true,
+    "package-lock.json": true,
+    "yarn.lock": true
+  },
+  "workbench.colorTheme": "One Dark Bimbo",
+  "workbench.iconTheme": "catppuccin-perfect-dark"
 }
