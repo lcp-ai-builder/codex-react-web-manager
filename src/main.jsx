@@ -7,8 +7,8 @@ import App from '@/App.jsx';
 const theme = extendTheme({
   config: {
     initialColorMode: 'light',
-    useSystemColorMode: false
-  }
+    useSystemColorMode: true,
+  },
 });
 
 ReactDOM.createRoot(document.getElementById('root')).render(
