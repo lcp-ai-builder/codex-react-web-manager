@@ -1,6 +1,5 @@
 {
   "cSpell.enabled": false,
-  "git.enableCommitSigning": true,
   "editor.fontFamily": "'Google Sans Code','Monaspace Neon',Monaco,'JetBrains Mono','WenQuanYi Micro Hei Mono','Microsoft YaHei','Fira Code', Consolas, 'Courier New', monospace",
   "eslint.enable": true,
   "explorer.fileNesting.enabled": true,
@@ -20,6 +19,8 @@
     "package-lock.json": true,
     "yarn.lock": true
   },
+  "git.enableCommitSigning": true,
+  "vite.autoStart": false,
   "workbench.colorTheme": "One Dark Bimbo",
   "workbench.iconTheme": "catppuccin-perfect-dark"
 }

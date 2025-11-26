@@ -13,6 +13,7 @@ export default defineConfig({
     port: 5173,
     // host: '192.168.127.128',
     host: true,
+    open: false,
     strictPort: true,
     origin: 'http://192.168.127.128:5173',
     // 如果需要固定 HMR 连接，可取消注释下方配置
