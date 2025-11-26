@@ -47,6 +47,11 @@ const LoginPage = () => {
       const data = await response.json();
 
       if (data.success) {
+        // 持久化当前登录人，方便首页判断是否为 admin
+        localStorage.setItem(
+          'currentUser',
+          JSON.stringify({ id: userId, name: data?.name || userId })
+        );
         navigate('/home');
       } else {
         toast({

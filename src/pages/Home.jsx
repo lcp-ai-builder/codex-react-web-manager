@@ -28,31 +28,35 @@ import {
   FiStar,
   FiChevronDown,
   FiChevronUp,
+  FiTool,
+  FiUserCheck,
+  FiKey,
+  FiMenu,
+  FiShield,
+  FiActivity,
+  FiLock,
 } from 'react-icons/fi';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 
-// 左侧菜单定义：支持多级、图标和路由跳转
-const menuItems = [
-  { icon: FiHome, label: '仪表盘', path: '/home' },
-  {
-    icon: FiUsers,
-    label: '用户管理',
-    children: [
-      { icon: FiUser, label: '普通用户', path: '/home/users/regular' },
-      { icon: FiStar, label: 'VIP用户' }
-    ]
-  },
-  { icon: FiSettings, label: '系统设置' },
-];
-
 const HomePage = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [openMenus, setOpenMenus] = useState({
-    用户管理: true,
-  });
   const navigate = useNavigate();
   const location = useLocation();
   const { colorMode, toggleColorMode } = useColorMode();
+  const currentUser = useMemo(() => {
+    try {
+      const stored = localStorage.getItem('currentUser');
+      if (stored) return JSON.parse(stored);
+    } catch (error) {
+      console.warn('读取本地用户信息失败：', error);
+    }
+    return { id: 'admin', name: '管理员' };
+  }, []);
+  const isAdmin = currentUser?.id?.toLowerCase?.() === 'admin';
+  const [openMenus, setOpenMenus] = useState({
+    用户管理: true,
+    ...(isAdmin ? { 系统维护: true } : {}),
+  });
   const pageBg = useColorModeValue('gray.100', 'gray.900');
   const sidebarBg = useColorModeValue('white', 'gray.800');
   const headerBg = useColorModeValue('white', 'gray.800');
@@ -62,6 +66,49 @@ const HomePage = () => {
     { bg: 'teal.50', color: 'teal.500' },
     { bg: 'teal.900', color: 'teal.200' }
   );
+  const handleLogout = () => {
+    localStorage.removeItem('currentUser');
+    navigate('/');
+  };
+
+  const baseMenuItems = useMemo(
+    () => [
+      { icon: FiHome, label: '仪表盘', path: '/home' },
+      {
+        icon: FiUsers,
+        label: '用户管理',
+        children: [
+          { icon: FiUser, label: '普通用户', path: '/home/users/regular' },
+          { icon: FiStar, label: 'VIP用户' }
+        ]
+      },
+      { icon: FiSettings, label: '系统设置' },
+    ],
+    []
+  );
+
+  const adminMenu = useMemo(
+    () => ({
+      icon: FiTool,
+      label: '系统维护',
+      children: [
+        { icon: FiUserCheck, label: '用户管理', path: '/home/system/users' },
+        { icon: FiKey, label: '角色管理', path: '/home/system/roles' },
+        { icon: FiMenu, label: '菜单管理', path: '/home/system/menus' },
+        { icon: FiShield, label: '权限分配', path: '/home/system/permissions' },
+        { icon: FiActivity, label: '操作日志', path: '/home/system/logs' },
+        { icon: FiLock, label: '修改密码', path: '/home/system/password' },
+      ],
+    }),
+    []
+  );
+
+  // 左侧菜单定义：支持多级、图标和路由跳转；admin 独享“系统维护”
+  const menuItems = useMemo(() => {
+    const items = [...baseMenuItems];
+    if (isAdmin) items.push(adminMenu);
+    return items;
+  }, [adminMenu, baseMenuItems, isAdmin]);
 
   // 将菜单项拍平成 path->label 映射，方便抬头展示“当前位置”
   const menuPathLabelMap = useMemo(() => {
@@ -78,7 +125,7 @@ const HomePage = () => {
     };
     collect(menuItems);
     return map;
-  }, []);
+  }, [menuItems]);
 
   const currentPath =
     location.pathname.length > 1 && location.pathname.endsWith('/')
@@ -224,17 +271,20 @@ const HomePage = () => {
               variant="ghost"
               colorScheme="teal"
             />
-            <Avatar size="sm" name="管理员" />
+            <Avatar size="sm" name={currentUser?.name || currentUser?.id} />
             <VStack spacing={0} align="flex-start">
-              <Text fontWeight="medium">管理员</Text>
+              <Text fontWeight="medium">
+                {currentUser?.name || currentUser?.id || '未登录用户'}
+              </Text>
               <Text fontSize="sm" color={textMuted}>
-                admin@example.com
+                {currentUser?.email || 'admin@example.com'}
               </Text>
             </VStack>
             <Button
               leftIcon={<FiLogOut />}
               variant="outline"
               colorScheme="teal"
+              onClick={handleLogout}
             >
               退出
             </Button>

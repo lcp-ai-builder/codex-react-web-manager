@@ -4,7 +4,7 @@ import {
   ButtonGroup,
   Flex,
   Text,
-  useColorModeValue
+  useColorModeValue,
 } from '@chakra-ui/react';
 
 const MAX_VISIBLE_PAGES = 10;
@@ -17,7 +17,7 @@ const Pagination = ({
   pageSize,
   size = 'sm',
   colorScheme = 'teal',
-  showSummary = true
+  showSummary = true,
 }) => {
   const summaryColor = useColorModeValue('gray.600', 'gray.400');
 
