@@ -101,12 +101,10 @@ const RegularUsersPage = () => {
         const response = await fetch(
           `${API_BASE_URL}/getAll?page=${page}&pageSize=${PAGE_SIZE}`
         );
-        const payload = await response
-          .json()
-          .catch(() => ({
-            data: regularUsersData,
-            total: regularUsersData.length,
-          }));
+        const payload = await response.json().catch(() => ({
+          data: regularUsersData,
+          total: regularUsersData.length,
+        }));
         if (!response.ok) {
           throw new Error('Request failed');
         }

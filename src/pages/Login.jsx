@@ -16,10 +16,11 @@ import {
 import { MoonIcon, SunIcon } from '@chakra-ui/icons';
 import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '@/config/api';
+import { hashPassword } from '@/components/hash-password';
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const [userId, setUserId] = useState('zhang3');
+  const [userId, setUserId] = useState('admin');
   const [password, setPassword] = useState('aaaaaa');
   const [loading, setLoading] = useState(false);
   const { colorMode, toggleColorMode } = useColorMode();
@@ -33,6 +34,7 @@ const LoginPage = () => {
     event.preventDefault();
     setLoading(true);
     try {
+      const hashedPassword = await hashPassword(password);
       const response = await fetch(`${API_BASE_URL}/login`, {
         method: 'POST',
         headers: {
@@ -40,7 +42,7 @@ const LoginPage = () => {
         },
         body: JSON.stringify({
           userId,
-          password,
+          password: hashedPassword,
         }),
       });
 
@@ -63,6 +65,7 @@ const LoginPage = () => {
         });
       }
     } catch (err) {
+      console.error('登录请求失败：', err);
       toast({
         title: '登录请求失败，请稍后重试',
         status: 'error',
