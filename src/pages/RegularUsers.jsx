@@ -4,8 +4,8 @@ import { AlertDialog, AlertDialogBody, AlertDialogContent, AlertDialogFooter, Al
 // prettier-ignore
 import { FiEdit2, FiTrash2 } from 'react-icons/fi';
 import Pagination from '@/components/Pagination.jsx';
-import { API_BASE_URL } from '@/config/api.js';
 import { regularUsersData } from '@/data/regularUsers.js';
+import { fetchUsers as fetchUsersApi, addUser, updateUser, deleteUser } from '@/services/api-services.js';
 
 const PAGE_SIZE = 10; // 统一设置分页大小，方便后续联动
 
@@ -45,17 +45,16 @@ const RegularUsersPage = () => {
   const borderColor = useColorModeValue('gray.200', 'gray.700');
   const mutedText = useColorModeValue('gray.600', 'gray.400');
 
+  // 获取列表，失败时回退到本地 mock
   const fetchUsers = useCallback(
     async (page = 1) => {
+      const controller = new AbortController();
       try {
-        const response = await fetch(`${API_BASE_URL}/getAll?page=${page}&pageSize=${PAGE_SIZE}`);
-        const payload = await response.json().catch(() => ({
-          data: regularUsersData,
-          total: regularUsersData.length,
-        }));
-        if (!response.ok) {
-          throw new Error('Request failed');
-        }
+        const payload = await fetchUsersApi({
+          page,
+          pageSize: PAGE_SIZE,
+          signal: controller.signal,
+        });
         const listCandidate = Array.isArray(payload)
           ? payload
           : Array.isArray(payload?.data?.list)
@@ -134,17 +133,7 @@ const RegularUsersPage = () => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3000);
     try {
-      const response = await fetch(`${API_BASE_URL}/addNewUser`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-        signal: controller.signal,
-      });
-      if (!response.ok) {
-        throw new Error('Request failed');
-      }
+      await addUser({ data: formData, signal: controller.signal });
       onAddClose();
       // 新用户成功添加后，前端可选择刷新列表；这里简单地插入一条在顶部
       setUsers((prev) => [
@@ -347,20 +336,14 @@ const RegularUsersPage = () => {
               onClick={async () => {
                 if (!selectedUser) return;
                 setIsUpdating(true);
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 3000);
                 try {
-                  const response = await fetch(`${API_BASE_URL}/editUserInfo`, {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                      id: selectedUser.id,
-                      ...editFormData,
-                    }),
+                  await updateUser({
+                    id: selectedUser.id,
+                    data: editFormData,
+                    signal: controller.signal,
                   });
-                  if (!response.ok) {
-                    throw new Error('Request failed');
-                  }
                   // 同步更新本地 users，保持列表与接口一致
                   setUsers((prev) => prev.map((user) => (user.id === selectedUser.id ? { ...user, ...editFormData } : user)));
                   toast({
@@ -378,6 +361,7 @@ const RegularUsersPage = () => {
                     isClosable: true,
                   });
                 } finally {
+                  clearTimeout(timeoutId);
                   setIsUpdating(false);
                 }
               }}
@@ -438,17 +422,12 @@ const RegularUsersPage = () => {
                 onClick={async () => {
                   if (!deleteTarget) return;
                   setIsDeleting(true);
+                  const controller = new AbortController();
                   try {
-                    const response = await fetch(`${API_BASE_URL}/deleteUserInfo`, {
-                      method: 'POST',
-                      headers: {
-                        'Content-Type': 'application/json',
-                      },
-                      body: JSON.stringify({ id: deleteTarget.id }),
+                    await deleteUser({
+                      id: deleteTarget.id,
+                      signal: controller.signal,
                     });
-                    if (!response.ok) {
-                      throw new Error('Request failed');
-                    }
                     setUsers((prev) => {
                       const updated = prev.filter((user) => user.id !== deleteTarget.id);
                       // 删除后若总页数减少，回退到最后一页，避免空白页

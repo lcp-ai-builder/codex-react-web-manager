@@ -38,8 +38,8 @@ import {
 } from '@chakra-ui/react';
 import { FiEdit2, FiTrash2, FiPlus } from 'react-icons/fi';
 import Pagination from '@/components/Pagination.jsx';
-import { API_BASE_URL } from '@/config/api.js';
 import { rolesData } from '@/data/roles.js';
+import { fetchRoles as fetchRolesApi, createRole, updateRole, removeRole } from '@/services/api-services.js';
 
 const PAGE_SIZE = 10;
 
@@ -88,13 +88,13 @@ const RolesPage = () => {
   // 统一封装列表请求，优先走接口，失败时回落到本地数据
   const fetchRoles = useCallback(
     async (page = 1) => {
+      const controller = new AbortController();
       try {
-        const response = await fetch(`${API_BASE_URL}/roles?page=${page}&pageSize=${PAGE_SIZE}`);
-        const payload = await response.json().catch(() => ({ data: rolesData, total: rolesData.length }));
-
-        if (!response.ok) {
-          throw new Error('Request failed');
-        }
+        const payload = await fetchRolesApi({
+          page,
+          pageSize: PAGE_SIZE,
+          signal: controller.signal,
+        });
 
         const listCandidate = Array.isArray(payload)
           ? payload
@@ -174,17 +174,7 @@ const RolesPage = () => {
     const timeoutId = setTimeout(() => controller.abort(), 3000);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/roles`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-        signal: controller.signal,
-      });
-      if (!response.ok) {
-        throw new Error('Request failed');
-      }
+      await createRole({ data: formData, signal: controller.signal });
 
       const newRole = {
         id: `R${String(Date.now()).slice(-5)}`,
@@ -233,17 +223,11 @@ const RolesPage = () => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3000);
     try {
-      const response = await fetch(`${API_BASE_URL}/roles/${encodeURIComponent(editFormData.id)}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(editFormData),
+      await updateRole({
+        id: editFormData.id,
+        data: editFormData,
         signal: controller.signal,
       });
-      if (!response.ok) {
-        throw new Error('Request failed');
-      }
 
       setRoles((prev) => prev.map((role) => (role.id === editFormData.id ? { ...role, ...editFormData } : role)));
       onEditClose();
@@ -279,13 +263,7 @@ const RolesPage = () => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3000);
     try {
-      const response = await fetch(`${API_BASE_URL}/roles/${encodeURIComponent(deleteTarget.id)}`, {
-        method: 'DELETE',
-        signal: controller.signal,
-      });
-      if (!response.ok) {
-        throw new Error('Request failed');
-      }
+      await removeRole({ id: deleteTarget.id, signal: controller.signal });
 
       setRoles((prev) => prev.filter((role) => role.id !== deleteTarget.id));
       setTotalItems((prev) => Math.max(0, prev - 1));

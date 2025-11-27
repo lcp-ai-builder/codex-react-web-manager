@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Box, Button, Flex, FormControl, FormLabel, Heading, IconButton, Input, Text, useColorMode, useColorModeValue, useToast } from '@chakra-ui/react';
 import { MoonIcon, SunIcon } from '@chakra-ui/icons';
 import { useNavigate } from 'react-router-dom';
-import { API_BASE_URL } from '@/config/api';
+import { login } from '@/services/api-services.js';
 import { hashPassword } from '@/components/hash-password';
 
 const LoginPage = () => {
@@ -22,18 +22,7 @@ const LoginPage = () => {
     setLoading(true);
     try {
       const hashedPassword = await hashPassword(password);
-      const response = await fetch(`${API_BASE_URL}/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId,
-          password: hashedPassword,
-        }),
-      });
-
-      const data = await response.json();
+      const data = await login({ userId, password: hashedPassword });
 
       if (data.success) {
         // 持久化当前登录人，方便首页判断是否为 admin
