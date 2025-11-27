@@ -1,18 +1,5 @@
 import { useState } from 'react';
-import {
-  Box,
-  Button,
-  Flex,
-  FormControl,
-  FormLabel,
-  Heading,
-  IconButton,
-  Input,
-  Text,
-  useColorMode,
-  useColorModeValue,
-  useToast,
-} from '@chakra-ui/react';
+import { Box, Button, Flex, FormControl, FormLabel, Heading, IconButton, Input, Text, useColorMode, useColorModeValue, useToast } from '@chakra-ui/react';
 import { MoonIcon, SunIcon } from '@chakra-ui/icons';
 import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '@/config/api';
@@ -50,10 +37,7 @@ const LoginPage = () => {
 
       if (data.success) {
         // 持久化当前登录人，方便首页判断是否为 admin
-        localStorage.setItem(
-          'currentUser',
-          JSON.stringify({ id: userId, name: data?.name || userId })
-        );
+        localStorage.setItem('currentUser', JSON.stringify({ id: userId, name: data?.name || userId }));
         navigate('/home');
       } else {
         toast({
@@ -80,16 +64,7 @@ const LoginPage = () => {
 
   return (
     <Flex minH="100vh" align="center" justify="center" bg={pageBg} px={4}>
-      <Box
-        as="form"
-        onSubmit={handleLogin}
-        bg={cardBg}
-        p={10}
-        borderRadius="lg"
-        boxShadow={cardShadow}
-        w="full"
-        maxW="md"
-      >
+      <Box as="form" onSubmit={handleLogin} bg={cardBg} p={10} borderRadius="lg" boxShadow={cardShadow} w="full" maxW="md">
         <Flex align="center" justify="space-between" mb={6}>
           <Heading size="lg">管理系统登录</Heading>
           <IconButton
@@ -103,30 +78,13 @@ const LoginPage = () => {
         </Flex>
         <FormControl id="userId" mb={4}>
           <FormLabel>用户ID</FormLabel>
-          <Input
-            placeholder="请输入用户ID"
-            value={userId}
-            onChange={(e) => setUserId(e.target.value)}
-            required
-          />
+          <Input placeholder="请输入用户ID" value={userId} onChange={(e) => setUserId(e.target.value)} required />
         </FormControl>
         <FormControl id="password" mb={6}>
           <FormLabel>密码</FormLabel>
-          <Input
-            type="password"
-            placeholder="请输入密码"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
+          <Input type="password" placeholder="请输入密码" value={password} onChange={(e) => setPassword(e.target.value)} required />
         </FormControl>
-        <Button
-          type="submit"
-          colorScheme="teal"
-          w="full"
-          size="lg"
-          isLoading={loading}
-        >
+        <Button type="submit" colorScheme="teal" w="full" size="lg" isLoading={loading}>
           登录
         </Button>
       </Box>

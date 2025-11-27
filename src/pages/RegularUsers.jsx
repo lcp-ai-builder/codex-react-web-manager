@@ -1,41 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  AlertDialog,
-  AlertDialogBody,
-  AlertDialogContent,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogOverlay,
-  Badge,
-  Box,
-  Button,
-  Flex,
-  FormControl,
-  FormLabel,
-  Heading,
-  Input,
-  Modal,
-  ModalBody,
-  ModalCloseButton,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  ModalOverlay,
-  Select,
-  Table,
-  TableContainer,
-  Tbody,
-  Td,
-  Text,
-  Th,
-  Thead,
-  Tr,
-  useColorModeValue,
-  useDisclosure,
-  useToast,
-  IconButton,
-  HStack,
-} from '@chakra-ui/react';
+// prettier-ignore
+import { AlertDialog, AlertDialogBody, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogOverlay, Badge, Box, Button, Flex, FormControl, FormLabel, Heading, Input, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, Select, Table, TableContainer, Tbody, Td, Text, Th, Thead, Tr, useColorModeValue, useDisclosure, useToast, IconButton, HStack } from '@chakra-ui/react';
+// prettier-ignore
 import { FiEdit2, FiTrash2 } from 'react-icons/fi';
 import Pagination from '@/components/Pagination.jsx';
 import { API_BASE_URL } from '@/config/api.js';
@@ -67,26 +33,10 @@ const RegularUsersPage = () => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
-  const {
-    isOpen: isAddOpen,
-    onOpen: onAddOpen,
-    onClose: onAddClose,
-  } = useDisclosure();
-  const {
-    isOpen: isEditOpen,
-    onOpen: onEditOpen,
-    onClose: onEditClose,
-  } = useDisclosure();
-  const {
-    isOpen: isSuccessOpen,
-    onOpen: onSuccessOpen,
-    onClose: onSuccessClose,
-  } = useDisclosure();
-  const {
-    isOpen: isDeleteOpen,
-    onOpen: onDeleteOpen,
-    onClose: onDeleteClose,
-  } = useDisclosure();
+  const { isOpen: isAddOpen, onOpen: onAddOpen, onClose: onAddClose } = useDisclosure();
+  const { isOpen: isEditOpen, onOpen: onEditOpen, onClose: onEditClose } = useDisclosure();
+  const { isOpen: isSuccessOpen, onOpen: onSuccessOpen, onClose: onSuccessClose } = useDisclosure();
+  const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosure();
   const successCancelRef = useRef();
   const deleteCancelRef = useRef();
   const toast = useToast();
@@ -98,9 +48,7 @@ const RegularUsersPage = () => {
   const fetchUsers = useCallback(
     async (page = 1) => {
       try {
-        const response = await fetch(
-          `${API_BASE_URL}/getAll?page=${page}&pageSize=${PAGE_SIZE}`
-        );
+        const response = await fetch(`${API_BASE_URL}/getAll?page=${page}&pageSize=${PAGE_SIZE}`);
         const payload = await response.json().catch(() => ({
           data: regularUsersData,
           total: regularUsersData.length,
@@ -236,22 +184,9 @@ const RegularUsersPage = () => {
       {/* <Heading size="lg" mb={6}>
         普通用户
       </Heading> */}
-      <Box
-        bg={tableBg}
-        borderRadius="lg"
-        border="1px solid"
-        borderColor={borderColor}
-        boxShadow="sm"
-      >
+      <Box bg={tableBg} borderRadius="lg" border="1px solid" borderColor={borderColor} boxShadow="sm">
         {/* 表格头部：仅放一个“添加”按钮 */}
-        <Flex
-          px={6}
-          py={4}
-          borderBottom="1px solid"
-          borderColor={borderColor}
-          align="center"
-          justify="flex-start"
-        >
+        <Flex px={6} py={4} borderBottom="1px solid" borderColor={borderColor} align="center" justify="flex-start">
           <Button colorScheme="teal" onClick={handleOpenModal}>
             添加新用户
           </Button>
@@ -313,24 +248,8 @@ const RegularUsersPage = () => {
             </Tbody>
           </Table>
         </TableContainer>
-        <Flex
-          align="center"
-          justify="space-between"
-          px={6}
-          py={4}
-          borderTop="1px solid"
-          borderColor={borderColor}
-          flexWrap="wrap"
-          gap={4}
-        >
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
-            totalItems={totalItems}
-            pageSize={PAGE_SIZE}
-            colorScheme="teal"
-          />
+        <Flex align="center" justify="space-between" px={6} py={4} borderTop="1px solid" borderColor={borderColor} flexWrap="wrap" gap={4}>
+          <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} totalItems={totalItems} pageSize={PAGE_SIZE} colorScheme="teal" />
         </Flex>
       </Box>
       {/* 新增用户弹窗：三项基础信息 */}
@@ -342,30 +261,15 @@ const RegularUsersPage = () => {
           <ModalBody>
             <FormControl mb={4} isRequired>
               <FormLabel>姓名</FormLabel>
-              <Input
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                placeholder="请输入用户姓名"
-              />
+              <Input name="name" value={formData.name} onChange={handleInputChange} placeholder="请输入用户姓名" />
             </FormControl>
             <FormControl mb={4} isRequired>
               <FormLabel>邮箱</FormLabel>
-              <Input
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                placeholder="user@example.com"
-              />
+              <Input name="email" type="email" value={formData.email} onChange={handleInputChange} placeholder="user@example.com" />
             </FormControl>
             <FormControl>
               <FormLabel>状态</FormLabel>
-              <Select
-                name="status"
-                value={formData.status}
-                onChange={handleInputChange}
-              >
+              <Select name="status" value={formData.status} onChange={handleInputChange}>
                 <option value="active">启用</option>
                 <option value="inactive">停用</option>
               </Select>
@@ -375,11 +279,7 @@ const RegularUsersPage = () => {
             <Button mr={3} onClick={onAddClose}>
               取消
             </Button>
-            <Button
-              colorScheme="teal"
-              onClick={handleSave}
-              isLoading={isSaving}
-            >
+            <Button colorScheme="teal" onClick={handleSave} isLoading={isSaving}>
               保存
             </Button>
           </ModalFooter>
@@ -462,13 +362,7 @@ const RegularUsersPage = () => {
                     throw new Error('Request failed');
                   }
                   // 同步更新本地 users，保持列表与接口一致
-                  setUsers((prev) =>
-                    prev.map((user) =>
-                      user.id === selectedUser.id
-                        ? { ...user, ...editFormData }
-                        : user
-                    )
-                  );
+                  setUsers((prev) => prev.map((user) => (user.id === selectedUser.id ? { ...user, ...editFormData } : user)));
                   toast({
                     title: '用户已更新',
                     status: 'success',
@@ -495,12 +389,7 @@ const RegularUsersPage = () => {
         </ModalContent>
       </Modal>
       {/* 新增完成提示框 */}
-      <AlertDialog
-        isOpen={isSuccessOpen}
-        leastDestructiveRef={successCancelRef}
-        onClose={onSuccessClose}
-        isCentered
-      >
+      <AlertDialog isOpen={isSuccessOpen} leastDestructiveRef={successCancelRef} onClose={onSuccessClose} isCentered>
         <AlertDialogOverlay>
           <AlertDialogContent>
             <AlertDialogHeader fontSize="lg" fontWeight="bold">
@@ -508,11 +397,7 @@ const RegularUsersPage = () => {
             </AlertDialogHeader>
             <AlertDialogBody>新用户已成功添加。</AlertDialogBody>
             <AlertDialogFooter>
-              <Button
-                ref={successCancelRef}
-                colorScheme="teal"
-                onClick={onSuccessClose}
-              >
+              <Button ref={successCancelRef} colorScheme="teal" onClick={onSuccessClose}>
                 确定
               </Button>
             </AlertDialogFooter>
@@ -534,11 +419,7 @@ const RegularUsersPage = () => {
             <AlertDialogHeader fontSize="lg" fontWeight="bold">
               确认删除
             </AlertDialogHeader>
-            <AlertDialogBody>
-              {deleteTarget
-                ? `确定要删除用户 ${deleteTarget.name} 吗？该操作不可撤销。`
-                : '确定要删除该用户吗？'}
-            </AlertDialogBody>
+            <AlertDialogBody>{deleteTarget ? `确定要删除用户 ${deleteTarget.name} 吗？该操作不可撤销。` : '确定要删除该用户吗？'}</AlertDialogBody>
             <AlertDialogFooter>
               <Button
                 ref={deleteCancelRef}
@@ -558,28 +439,20 @@ const RegularUsersPage = () => {
                   if (!deleteTarget) return;
                   setIsDeleting(true);
                   try {
-                    const response = await fetch(
-                      `${API_BASE_URL}/deleteUserInfo`,
-                      {
-                        method: 'POST',
-                        headers: {
-                          'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ id: deleteTarget.id }),
-                      }
-                    );
+                    const response = await fetch(`${API_BASE_URL}/deleteUserInfo`, {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({ id: deleteTarget.id }),
+                    });
                     if (!response.ok) {
                       throw new Error('Request failed');
                     }
                     setUsers((prev) => {
-                      const updated = prev.filter(
-                        (user) => user.id !== deleteTarget.id
-                      );
+                      const updated = prev.filter((user) => user.id !== deleteTarget.id);
                       // 删除后若总页数减少，回退到最后一页，避免空白页
-                      const newTotalPages = Math.max(
-                        1,
-                        Math.ceil(updated.length / PAGE_SIZE)
-                      );
+                      const newTotalPages = Math.max(1, Math.ceil(updated.length / PAGE_SIZE));
                       if (currentPage > newTotalPages) {
                         setCurrentPage(newTotalPages);
                       }

@@ -1,10 +1,4 @@
-import {
-  Box,
-  Flex,
-  Heading,
-  Text,
-  useColorModeValue
-} from '@chakra-ui/react';
+import { Box, Flex, Heading, Text, useColorModeValue } from '@chakra-ui/react';
 
 // 简单的指标卡片，接收标题与数值
 const InfoCard = ({ title, value }) => {
@@ -13,14 +7,7 @@ const InfoCard = ({ title, value }) => {
   const labelColor = useColorModeValue('gray.500', 'gray.400');
 
   return (
-    <Box
-      flex="1"
-      minW="240px"
-      bg={cardBg}
-      borderRadius="lg"
-      boxShadow={cardShadow}
-      p={6}
-    >
+    <Box flex="1" minW="240px" bg={cardBg} borderRadius="lg" boxShadow={cardShadow} p={6}>
       <Text fontSize="sm" color={labelColor}>
         {title}
       </Text>

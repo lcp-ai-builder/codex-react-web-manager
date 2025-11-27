@@ -5,12 +5,11 @@ const MaintenancePage = ({ title }) => {
   const textMuted = useColorModeValue('gray.600', 'gray.400');
 
   return (
+    // 统一占位组件：真实业务接入前先给出提示
     <Box bg={cardBg} borderRadius="lg" boxShadow="sm" p={6}>
       <VStack align="flex-start" spacing={3}>
         <Heading size="md">{title}</Heading>
-        <Text color={textMuted}>
-          这里是 {title} 页面占位内容，可在此对接真实业务功能。
-        </Text>
+        <Text color={textMuted}>这里是 {title} 页面占位内容，可在此对接真实业务功能。</Text>
       </VStack>
     </Box>
   );
