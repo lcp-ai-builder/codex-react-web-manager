@@ -35,8 +35,10 @@ import {
   AlertDialogHeader,
   AlertDialogOverlay,
   SimpleGrid,
+  Tooltip,
+  IconButton,
 } from '@chakra-ui/react';
-import { FiEdit2, FiPlus } from 'react-icons/fi';
+import { FiEdit2, FiPlus, FiSearch } from 'react-icons/fi';
 import Pagination from '@/components/Pagination.jsx';
 import { operatorsData } from '@/data/operators.js';
 import { rolesData } from '@/data/roles.js';
@@ -291,29 +293,33 @@ const OperatorsPage = () => {
             </Tr>
           </Thead>
           <Tbody>
-            {operators.map((operator) => (
-              <Tr key={operator.id || operator.code}>
+            {operators.map((operator, index) => (
+              <Tr key={operator.id || operator.code} bg={index % 2 === 0 ? 'transparent' : useColorModeValue('gray.50', 'gray.700')}>
                 <Td>{operator.code || operator.id}</Td>
-                <Td>
-                  <Text fontWeight="medium">{operator.name}</Text>
-                </Td>
+              <Td>
+                <Text fontWeight="medium">{operator.name}</Text>
+              </Td>
                 <Td>{operator.phone || '—'}</Td>
                 <Td>{operator.roleName || '—'}</Td>
                 <Td>
-                  <Badge colorScheme={statusColorScheme[operator.status] || 'gray'}>{operator.status === 'active' ? '启用' : '停用'}</Badge>
+                  <Badge colorScheme={statusColorScheme[operator.status] || 'gray'}>
+                    <Text as="span" color={operator.status === 'inactive' ? 'red.500' : 'inherit'}>
+                      {operator.status === 'active' ? '启用' : '停用'}
+                    </Text>
+                  </Badge>
                 </Td>
-                <Td>{operator.lastLoginAt || '—'}</Td>
-                <Td textAlign="right">
-                  <HStack justify="flex-end" spacing={3}>
-                    <Button size="sm" variant="outline" onClick={() => handleOpenDetail(operator)}>
-                      查看全部信息
-                    </Button>
-                    <Button size="sm" leftIcon={<FiEdit2 />} variant="ghost" onClick={() => handleOpenEdit(operator)}>
-                      编辑
-                    </Button>
-                  </HStack>
-                </Td>
-              </Tr>
+              <Td>{operator.lastLoginAt || '—'}</Td>
+              <Td textAlign="right">
+                <HStack justify="flex-end" spacing={3}>
+                  <Tooltip label="查看全部信息" hasArrow>
+                    <IconButton aria-label="查看全部信息" icon={<FiSearch />} size="sm" variant="ghost" onClick={() => handleOpenDetail(operator)} />
+                  </Tooltip>
+                  <Tooltip label="编辑信息" hasArrow>
+                    <IconButton aria-label="编辑信息" icon={<FiEdit2 />} size="sm" variant="ghost" onClick={() => handleOpenEdit(operator)} />
+                  </Tooltip>
+                </HStack>
+              </Td>
+            </Tr>
             ))}
           </Tbody>
         </Table>

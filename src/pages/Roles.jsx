@@ -348,8 +348,8 @@ const RolesPage = () => {
             </Tr>
           </Thead>
           <Tbody>
-            {roles.map((role) => (
-              <Tr key={role.id}>
+            {roles.map((role, index) => (
+              <Tr key={role.id} bg={index % 2 === 0 ? 'transparent' : useColorModeValue('gray.50', 'gray.700')}>
                 <Td>
                   <Text fontWeight="medium">{role.name}</Text>
                 </Td>
@@ -360,7 +360,11 @@ const RolesPage = () => {
                   </Text>
                 </Td>
                 <Td>
-                  <Badge colorScheme={statusColorScheme[role.status] || 'gray'}>{role.status === 'active' ? '启用' : '停用'}</Badge>
+                  <Badge colorScheme={statusColorScheme[role.status] || 'gray'}>
+                    <Text as="span" color={role.status === 'inactive' ? 'red.500' : 'inherit'}>
+                      {role.status === 'active' ? '启用' : '停用'}
+                    </Text>
+                  </Badge>
                 </Td>
                 <Td>{role.createdAt || '—'}</Td>
                 <Td>
