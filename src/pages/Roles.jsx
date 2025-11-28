@@ -30,7 +30,7 @@ import {
   AlertDialogOverlay,
   Switch,
 } from '@chakra-ui/react';
-import { FiEdit2, FiPlus } from 'react-icons/fi';
+import { FiEdit2, FiPlus, FiKey } from 'react-icons/fi';
 import DataTable from '@/components/DataTable.jsx';
 import { rolesData } from '@/data/roles.js';
 import { fetchRoles as fetchRolesApi, createRole, updateRole, updateRoleStatus } from '@/services/api-services.js';
@@ -344,6 +344,7 @@ const RolesPage = () => {
             </Text>
           </Badge>
         ),
+        visible: false,
       },
       { header: '创建时间', render: (role) => role.createdAt || '—' },
       {
@@ -373,7 +374,9 @@ const RolesPage = () => {
   return (
     <Box>
       <Flex justify="space-between" align="center" mb={6}>
-        <Heading size="lg">角色管理</Heading>
+        <Heading size="lg" display="flex" alignItems="center" gap={2}>
+          <FiKey /> 角色管理
+        </Heading>
         <Button leftIcon={<FiPlus />} colorScheme="teal" onClick={handleOpenAdd}>
           新建角色
         </Button>

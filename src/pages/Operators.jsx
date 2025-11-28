@@ -4,6 +4,7 @@ import {
   Box,
   Button,
   Flex,
+  HStack,
   FormControl,
   FormLabel,
   Heading,
@@ -29,12 +30,13 @@ import {
   SimpleGrid,
   Tooltip,
   IconButton,
+  Switch,
 } from '@chakra-ui/react';
-import { FiEdit2, FiPlus, FiSearch } from 'react-icons/fi';
+import { FiEdit2, FiPlus, FiSearch, FiUserCheck } from 'react-icons/fi';
 import DataTable from '@/components/DataTable.jsx';
 import { operatorsData } from '@/data/operators.js';
 import { rolesData as rolesMock } from '@/data/roles.js';
-import { fetchOperators, createOperator, updateOperator, fetchRoles as fetchRolesApi } from '@/services/api-services.js';
+import { fetchOperators, createOperator, updateOperator, fetchRoles as fetchRolesApi, updateRoleStatus } from '@/services/api-services.js';
 
 const PAGE_SIZE = 10;
 
@@ -47,11 +49,8 @@ const OperatorsPage = () => {
     operatorNo: '',
     name: '',
     loginName: '',
-    loginPassword: '',
     phone: '',
-    email: '',
     roleId: rolesOptions[0]?.id || '',
-    status: 'ACTIVE',
   });
   const [editFormData, setEditFormData] = useState({
     id: '',
@@ -67,6 +66,8 @@ const OperatorsPage = () => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [detailTarget, setDetailTarget] = useState(null);
   const { isOpen: isDetailOpen, onOpen: onDetailOpen, onClose: onDetailClose } = useDisclosure();
+  const [statusConfirm, setStatusConfirm] = useState({ isOpen: false, operator: null, nextStatus: 'ACTIVE' });
+  const [isStatusUpdating, setIsStatusUpdating] = useState(false);
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil(totalItems / PAGE_SIZE)), [totalItems]);
 
@@ -231,17 +232,15 @@ const OperatorsPage = () => {
     const timeoutId = setTimeout(() => controller.abort(), 3000);
 
     try {
-      const payloadData = {
-        operatorNo: formData.operatorNo,
-        name: formData.name,
-        loginName: formData.loginName,
-        phone: formData.phone,
-        roleId: Number(formData.roleId) || formData.roleId,
-      };
-      if (formData.email) payloadData.email = formData.email;
-
       const payload = await createOperator({
-        data: payloadData,
+        data: {
+          operatorNo: formData.operatorNo,
+          name: formData.name,
+          loginName: formData.loginName,
+          phone: formData.phone,
+          roleId: Number(formData.roleId) || formData.roleId,
+          ...(formData.email ? { email: formData.email } : {}),
+        },
         signal: controller.signal,
       });
       const roleInfo = rolesOptions.find((r) => r.id === formData.roleId);
@@ -304,6 +303,54 @@ const OperatorsPage = () => {
     onDetailOpen();
   };
 
+  const handleToggleStatus = (operator) => {
+    const nextStatus = String(operator.status || 'ACTIVE').toUpperCase() === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+    setStatusConfirm({ isOpen: true, operator, nextStatus });
+  };
+
+  const closeStatusConfirm = () => setStatusConfirm({ isOpen: false, operator: null, nextStatus: 'ACTIVE' });
+
+  const handleConfirmStatus = async () => {
+    if (!statusConfirm.operator) return;
+    setIsStatusUpdating(true);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+    try {
+      const payload = await updateRoleStatus({
+        id: statusConfirm.operator.id,
+        status: statusConfirm.nextStatus,
+        signal: controller.signal,
+      });
+      const returned = payload?.data && typeof payload.data === 'object' ? payload.data : payload && typeof payload === 'object' ? payload : null;
+      const merged =
+        returned && typeof returned === 'object'
+          ? { ...statusConfirm.operator, ...returned }
+          : { ...statusConfirm.operator, status: statusConfirm.nextStatus };
+
+      setOperators((prev) => prev.map((op) => (op.id === statusConfirm.operator.id ? merged : op)));
+      toast({
+        title: statusConfirm.nextStatus === 'ACTIVE' ? '操作员已启用' : '操作员已停用',
+        status: 'success',
+        position: 'top',
+        duration: 2500,
+        isClosable: true,
+      });
+    } catch (error) {
+      console.warn('更新操作员状态失败：', error);
+      toast({
+        title: '更新操作员状态失败',
+        status: 'error',
+        position: 'top',
+        duration: 3000,
+        isClosable: true,
+      });
+    } finally {
+      clearTimeout(timeoutId);
+      setIsStatusUpdating(false);
+      closeStatusConfirm();
+    }
+  };
+
   const columns = useMemo(
     () => [
       {
@@ -341,6 +388,7 @@ const OperatorsPage = () => {
             </Text>
           </Badge>
         ),
+        visible: false,
       },
       {
         header: '创建时间',
@@ -350,6 +398,23 @@ const OperatorsPage = () => {
       {
         header: '最后登录',
         render: (operator) => operator.lastLoginAt || '—',
+      },
+      {
+        header: '启用/停用',
+        render: (operator) => (
+          <HStack spacing={2}>
+            <Switch
+              isChecked={String(operator.status).toUpperCase() === 'ACTIVE'}
+              onChange={() => handleToggleStatus(operator)}
+              isDisabled={isStatusUpdating}
+              colorScheme="teal"
+              size="sm"
+            />
+            <Text fontSize="sm" color={mutedText}>
+              {String(operator.status).toUpperCase() === 'ACTIVE' ? '启用' : '停用'}
+            </Text>
+          </HStack>
+        ),
       },
       {
         header: '操作',
@@ -419,7 +484,9 @@ const OperatorsPage = () => {
   return (
     <Box>
       <Flex justify="space-between" align="center" mb={6}>
-        <Heading size="lg">操作员管理</Heading>
+        <Heading size="lg" display="flex" alignItems="center" gap={2}>
+          <FiUserCheck /> 操作员管理
+        </Heading>
         <Button leftIcon={<FiPlus />} colorScheme="teal" onClick={handleOpenAdd}>
           新建操作员
         </Button>
@@ -436,7 +503,7 @@ const OperatorsPage = () => {
             <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
               <FormControl isRequired>
                 <FormLabel>操作员编号</FormLabel>
-                <Input name="operatorNo" placeholder="" value={formData.operatorNo} onChange={handleInputChange} />
+                <Input name="operatorNo" value={formData.operatorNo} onChange={handleInputChange} />
               </FormControl>
               <FormControl isRequired>
                 <FormLabel>操作员姓名</FormLabel>
@@ -446,19 +513,11 @@ const OperatorsPage = () => {
                 <FormLabel>登录名</FormLabel>
                 <Input name="loginName" value={formData.loginName} onChange={handleInputChange} />
               </FormControl>
-              <FormControl>
-                <FormLabel>登录密码</FormLabel>
-                <Input name="loginPassword" type="password" value={formData.loginPassword} onChange={handleInputChange} />
-              </FormControl>
               <FormControl isRequired>
                 <FormLabel>联系电话</FormLabel>
                 <Input name="phone" value={formData.phone} onChange={handleInputChange} />
               </FormControl>
-              <FormControl>
-                <FormLabel>电子邮箱</FormLabel>
-                <Input name="email" value={formData.email} onChange={handleInputChange} />
-              </FormControl>
-              <FormControl>
+              <FormControl isRequired>
                 <FormLabel>所属角色</FormLabel>
                 <Select name="roleId" value={formData.roleId} onChange={handleInputChange}>
                   {rolesOptions.map((role) => (
@@ -466,13 +525,6 @@ const OperatorsPage = () => {
                       {role.name}
                     </option>
                   ))}
-                </Select>
-              </FormControl>
-              <FormControl>
-                <FormLabel>状态</FormLabel>
-                <Select name="status" value={formData.status} onChange={handleInputChange}>
-                  <option value="active">启用</option>
-                  <option value="inactive">停用</option>
                 </Select>
               </FormControl>
             </SimpleGrid>
@@ -583,6 +635,25 @@ const OperatorsPage = () => {
           </AlertDialogBody>
           <AlertDialogFooter>
             <Button onClick={onDetailClose}>关闭</Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog isOpen={statusConfirm.isOpen} onClose={closeStatusConfirm} isCentered>
+        <AlertDialogOverlay />
+        <AlertDialogContent>
+          <AlertDialogHeader fontSize="lg" fontWeight="bold">
+            确认{statusConfirm.nextStatus === 'ACTIVE' ? '启用' : '停用'}
+          </AlertDialogHeader>
+          <AlertDialogBody>
+            是否将操作员「{statusConfirm.operator?.name || statusConfirm.operator?.loginName}」设置为
+            {statusConfirm.nextStatus === 'ACTIVE' ? '启用' : '停用'}状态？
+          </AlertDialogBody>
+          <AlertDialogFooter>
+            <Button onClick={closeStatusConfirm}>取消</Button>
+            <Button colorScheme="teal" onClick={handleConfirmStatus} ml={3} isLoading={isStatusUpdating}>
+              确认
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
