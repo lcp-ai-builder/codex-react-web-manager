@@ -68,8 +68,8 @@ export const updateRole = async ({ id, data, signal }) =>
     signal,
   });
 
-export const removeRole = async ({ id, signal }) =>
-  request(`/roles/${encodeURIComponent(id)}`, {
-    method: 'DELETE',
+export const updateRoleStatus = async ({ id, status, signal }) =>
+  request(`/roles/${encodeURIComponent(id)}/status?status=${encodeURIComponent(status)}`, {
+    method: 'PUT',
     signal,
   });

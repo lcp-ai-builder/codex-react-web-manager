@@ -14,7 +14,7 @@ const AppRoutes = () => (
     <Route path="/home" element={<HomePage />}>
       <Route index element={<DashboardPage />} />
       <Route path="users/regular" element={<RegularUsersPage />} />
-      <Route path="system/users" element={<MaintenancePage title="用户管理" />} />
+      <Route path="system/operator" element={<MaintenancePage title="操作员管理" />} />
       <Route path="system/roles" element={<RolesPage />} />
       <Route path="system/menus" element={<MaintenancePage title="菜单管理" />} />
       <Route path="system/permissions" element={<MaintenancePage title="权限分配" />} />

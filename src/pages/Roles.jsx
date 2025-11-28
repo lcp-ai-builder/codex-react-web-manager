@@ -35,11 +35,12 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogOverlay,
+  Switch,
 } from '@chakra-ui/react';
-import { FiEdit2, FiTrash2, FiPlus } from 'react-icons/fi';
+import { FiEdit2, FiPlus } from 'react-icons/fi';
 import Pagination from '@/components/Pagination.jsx';
 import { rolesData } from '@/data/roles.js';
-import { fetchRoles as fetchRolesApi, createRole, updateRole, removeRole } from '@/services/api-services.js';
+import { fetchRoles as fetchRolesApi, createRole, updateRole, updateRoleStatus } from '@/services/api-services.js';
 
 const PAGE_SIZE = 10;
 
@@ -61,11 +62,12 @@ const RolesPage = () => {
     description: '',
     status: 'active',
   });
-  const [deleteTarget, setDeleteTarget] = useState(null);
   const [selectedRole, setSelectedRole] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [statusConfirm, setStatusConfirm] = useState({ isOpen: false, role: null, nextStatus: 'active' });
+  const [isStatusUpdating, setIsStatusUpdating] = useState(false);
+  const statusCancelRef = useRef();
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil(totalItems / PAGE_SIZE)), [totalItems]);
 
@@ -75,9 +77,6 @@ const RolesPage = () => {
 
   const { isOpen: isAddOpen, onOpen: onAddOpen, onClose: onAddClose } = useDisclosure();
   const { isOpen: isEditOpen, onOpen: onEditOpen, onClose: onEditClose } = useDisclosure();
-  const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosure();
-
-  const deleteCancelRef = useRef();
   const toast = useToast();
 
   const statusColorScheme = {
@@ -120,6 +119,7 @@ const RolesPage = () => {
         toast({
           title: '获取角色列表失败',
           status: 'error',
+          position: 'top',
           duration: 3000,
           isClosable: true,
         });
@@ -174,7 +174,7 @@ const RolesPage = () => {
     const timeoutId = setTimeout(() => controller.abort(), 3000);
 
     try {
-      await createRole({ data: formData, signal: controller.signal });
+      const payload = await createRole({ data: formData, signal: controller.signal });
 
       const roleFromApi =
         payload?.data && typeof payload.data === 'object'
@@ -196,6 +196,7 @@ const RolesPage = () => {
       toast({
         title: '角色创建成功',
         status: 'success',
+        position: 'top',
         duration: 2500,
         isClosable: true,
       });
@@ -204,6 +205,7 @@ const RolesPage = () => {
       toast({
         title: '新增角色失败',
         status: 'error',
+        position: 'top',
         duration: 3000,
         isClosable: true,
       });
@@ -232,17 +234,26 @@ const RolesPage = () => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3000);
     try {
-      await updateRole({
+      const payload = await updateRole({
         id: editFormData.id,
         data: editFormData,
         signal: controller.signal,
       });
 
-      setRoles((prev) => prev.map((role) => (role.id === editFormData.id ? { ...role, ...editFormData } : role)));
+      const updatedRole =
+        payload?.data && typeof payload.data === 'object'
+          ? payload.data
+          : payload && typeof payload === 'object'
+          ? payload
+          : null;
+      const mergedRole = updatedRole ? { ...editFormData, ...updatedRole } : editFormData;
+
+      setRoles((prev) => prev.map((role) => (role.id === editFormData.id ? { ...role, ...mergedRole } : role)));
       onEditClose();
       toast({
         title: '角色更新成功',
         status: 'success',
+        position: 'top',
         duration: 2500,
         isClosable: true,
       });
@@ -251,6 +262,7 @@ const RolesPage = () => {
       toast({
         title: '更新角色失败',
         status: 'error',
+        position: 'top',
         duration: 3000,
         isClosable: true,
       });
@@ -261,39 +273,55 @@ const RolesPage = () => {
   };
 
   // 删除前先记录目标，弹出确认框避免误删
-  const handleOpenDelete = (role) => {
-    setDeleteTarget(role);
-    onDeleteOpen();
+  const handleToggleStatus = (role) => {
+    const nextStatus = role.status === 'active' ? 'inactive' : 'active';
+    setStatusConfirm({ isOpen: true, role, nextStatus });
   };
 
-  const handleDelete = async () => {
-    if (!deleteTarget) return;
-    setIsDeleting(true);
+  const closeStatusConfirm = () => setStatusConfirm({ isOpen: false, role: null, nextStatus: 'active' });
+
+  const handleConfirmStatus = async () => {
+    if (!statusConfirm.role) return;
+    setIsStatusUpdating(true);
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3000);
     try {
-      await removeRole({ id: deleteTarget.id, signal: controller.signal });
+      const payload = await updateRoleStatus({
+        id: statusConfirm.role.id,
+        status: statusConfirm.nextStatus,
+        signal: controller.signal,
+      });
+      const returnedRole =
+        payload?.data && typeof payload.data === 'object'
+          ? payload.data
+          : payload && typeof payload === 'object'
+          ? payload
+          : null;
+      const merged = returnedRole
+        ? { ...statusConfirm.role, ...returnedRole }
+        : { ...statusConfirm.role, status: statusConfirm.nextStatus };
 
-      setRoles((prev) => prev.filter((role) => role.id !== deleteTarget.id));
-      setTotalItems((prev) => Math.max(0, prev - 1));
-      onDeleteClose();
+      setRoles((prev) => prev.map((role) => (role.id === statusConfirm.role.id ? merged : role)));
       toast({
-        title: '角色删除成功',
+        title: statusConfirm.nextStatus === 'active' ? '角色已启用' : '角色已停用',
         status: 'success',
+        position: 'top',
         duration: 2500,
         isClosable: true,
       });
     } catch (error) {
-      console.warn('删除角色失败：', error);
+      console.warn('更新角色状态失败：', error);
       toast({
-        title: '删除角色失败',
+        title: '更新角色状态失败',
         status: 'error',
+        position: 'top',
         duration: 3000,
         isClosable: true,
       });
     } finally {
       clearTimeout(timeoutId);
-      setIsDeleting(false);
+      setIsStatusUpdating(false);
+      closeStatusConfirm();
     }
   };
 
@@ -315,6 +343,7 @@ const RolesPage = () => {
               <Th>描述</Th>
               <Th>状态</Th>
               <Th>创建时间</Th>
+              <Th>启用/停用</Th>
               <Th textAlign="right">操作</Th>
             </Tr>
           </Thead>
@@ -334,10 +363,23 @@ const RolesPage = () => {
                   <Badge colorScheme={statusColorScheme[role.status] || 'gray'}>{role.status === 'active' ? '启用' : '停用'}</Badge>
                 </Td>
                 <Td>{role.createdAt || '—'}</Td>
+                <Td>
+                  <HStack spacing={2}>
+                    <Switch
+                      isChecked={role.status === 'active'}
+                      onChange={() => handleToggleStatus(role)}
+                      isDisabled={isStatusUpdating}
+                      colorScheme="teal"
+                      size="sm"
+                    />
+                    <Text fontSize="sm" color={mutedText}>
+                      {role.status === 'active' ? '启用' : '停用'}
+                    </Text>
+                  </HStack>
+                </Td>
                 <Td textAlign="right">
                   <HStack justify="flex-end" spacing={3}>
                     <IconButton aria-label="编辑角色" icon={<FiEdit2 />} size="sm" variant="ghost" onClick={() => handleOpenEdit(role)} />
-                    <IconButton aria-label="删除角色" icon={<FiTrash2 />} size="sm" variant="ghost" colorScheme="red" onClick={() => handleOpenDelete(role)} />
                   </HStack>
                 </Td>
               </Tr>
@@ -424,24 +466,27 @@ const RolesPage = () => {
         </ModalContent>
       </Modal>
 
-      <AlertDialog isOpen={isDeleteOpen} leastDestructiveRef={deleteCancelRef} onClose={onDeleteClose} isCentered>
+      <AlertDialog isOpen={statusConfirm.isOpen} leastDestructiveRef={statusCancelRef} onClose={closeStatusConfirm} isCentered>
         <AlertDialogOverlay>
           <AlertDialogContent>
             <AlertDialogHeader fontSize="lg" fontWeight="bold">
-              确认删除
+              确认{statusConfirm.nextStatus === 'active' ? '启用' : '停用'}
             </AlertDialogHeader>
-            <AlertDialogBody>确定要删除角色「{deleteTarget?.name}」吗？该操作不可撤销。</AlertDialogBody>
+            <AlertDialogBody>
+              是否将角色「{statusConfirm.role?.name}」设置为
+              {statusConfirm.nextStatus === 'active' ? '启用' : '停用'}状态？
+            </AlertDialogBody>
             <AlertDialogFooter>
-              <Button ref={deleteCancelRef} onClick={onDeleteClose}>
+              <Button ref={statusCancelRef} onClick={closeStatusConfirm}>
                 取消
               </Button>
-              <Button colorScheme="red" onClick={handleDelete} ml={3} isLoading={isDeleting}>
-                删除
+              <Button colorScheme="teal" onClick={handleConfirmStatus} ml={3} isLoading={isStatusUpdating}>
+                确认
               </Button>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialogOverlay>
-      </AlertDialog> */}
+      </AlertDialog>
     </Box>
   );
 };
