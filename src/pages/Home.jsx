@@ -92,7 +92,7 @@ const HomePage = () => {
       icon: FiTool,
       label: '系统维护',
       children: [
-        { icon: FiUserCheck, label: '用户管理', path: '/home/system/users' },
+        { icon: FiUserCheck, label: '操作员管理', path: '/home/system/operator' },
         { icon: FiKey, label: '角色管理', path: '/home/system/roles' },
         { icon: FiMenu, label: '菜单管理', path: '/home/system/menus' },
         { icon: FiShield, label: '权限分配', path: '/home/system/permissions' },

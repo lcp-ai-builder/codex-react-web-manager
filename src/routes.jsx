@@ -13,8 +13,8 @@ const AppRoutes = () => (
       <Route index element={<DashboardPage />} />
       <Route path="users/regular" element={<RegularUsersPage />} />
       <Route
-        path="system/users"
-        element={<MaintenancePage title="用户管理" />}
+        path="system/operator"
+        element={<MaintenancePage title="操作员管理" />}
       />
       <Route
         path="system/roles"

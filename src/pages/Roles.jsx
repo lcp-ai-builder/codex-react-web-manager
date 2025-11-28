@@ -204,15 +204,25 @@ const RolesPage = () => {
         body: JSON.stringify(formData),
         signal: controller.signal,
       });
+      const payload = await response.json().catch(() => null);
       if (!response.ok) {
         throw new Error('Request failed');
       }
 
-      const newRole = {
-        id: `R${String(Date.now()).slice(-5)}`,
-        createdAt: new Date().toISOString().slice(0, 10),
-        ...formData,
-      };
+      const roleFromApi =
+        payload?.data && typeof payload.data === 'object'
+          ? payload.data
+          : payload && typeof payload === 'object'
+          ? payload
+          : null;
+      const newRole =
+        roleFromApi && typeof roleFromApi === 'object'
+          ? { ...formData, ...roleFromApi }
+          : {
+              id: `R${String(Date.now()).slice(-5)}`,
+              createdAt: new Date().toISOString().slice(0, 10),
+              ...formData,
+            };
       setRoles((prev) => [newRole, ...prev]);
       setTotalItems((prev) => prev + 1);
       onAddClose();
@@ -265,13 +275,24 @@ const RolesPage = () => {
           signal: controller.signal,
         }
       );
+      const payload = await response.json().catch(() => null);
       if (!response.ok) {
         throw new Error('Request failed');
       }
 
+      const updatedRole =
+        payload?.data && typeof payload.data === 'object'
+          ? payload.data
+          : payload && typeof payload === 'object'
+          ? payload
+          : null;
+      const mergedRole = updatedRole
+        ? { ...editFormData, ...updatedRole }
+        : editFormData;
+
       setRoles((prev) =>
         prev.map((role) =>
-          role.id === editFormData.id ? { ...role, ...editFormData } : role
+          role.id === editFormData.id ? { ...role, ...mergedRole } : role
         )
       );
       onEditClose();
@@ -394,14 +415,14 @@ const RolesPage = () => {
                       variant="ghost"
                       onClick={() => handleOpenEdit(role)}
                     />
-                    <IconButton
+                    {/* <IconButton
                       aria-label="删除角色"
                       icon={<FiTrash2 />}
                       size="sm"
                       variant="ghost"
                       colorScheme="red"
                       onClick={() => handleOpenDelete(role)}
-                    />
+                    /> */}
                   </HStack>
                 </Td>
               </Tr>
@@ -535,7 +556,7 @@ const RolesPage = () => {
         </ModalContent>
       </Modal>
 
-      <AlertDialog
+      {/* <AlertDialog
         isOpen={isDeleteOpen}
         leastDestructiveRef={deleteCancelRef}
         onClose={onDeleteClose}
@@ -564,7 +585,7 @@ const RolesPage = () => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialogOverlay>
-      </AlertDialog>
+      </AlertDialog> */}
     </Box>
   );
 };
