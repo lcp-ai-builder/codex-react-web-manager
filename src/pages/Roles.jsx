@@ -38,12 +38,13 @@ import {
 } from '@chakra-ui/react';
 import { FiEdit2, FiTrash2, FiPlus } from 'react-icons/fi';
 import Pagination from '@/components/Pagination.jsx';
-import { API_BASE_URL } from '@/config/api.js';
 import { rolesData } from '@/data/roles.js';
+import { fetchRoles as fetchRolesApi, createRole, updateRole, removeRole } from '@/services/api-services.js';
 
 const PAGE_SIZE = 10;
 
 const RolesPage = () => {
+  // 角色数据与分页状态，默认读取本地 mock
   const [roles, setRoles] = useState(rolesData);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalItems, setTotalItems] = useState(rolesData.length);
@@ -66,30 +67,15 @@ const RolesPage = () => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const totalPages = useMemo(
-    () => Math.max(1, Math.ceil(totalItems / PAGE_SIZE)),
-    [totalItems]
-  );
+  const totalPages = useMemo(() => Math.max(1, Math.ceil(totalItems / PAGE_SIZE)), [totalItems]);
 
   const tableBg = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
   const mutedText = useColorModeValue('gray.600', 'gray.400');
 
-  const {
-    isOpen: isAddOpen,
-    onOpen: onAddOpen,
-    onClose: onAddClose,
-  } = useDisclosure();
-  const {
-    isOpen: isEditOpen,
-    onOpen: onEditOpen,
-    onClose: onEditClose,
-  } = useDisclosure();
-  const {
-    isOpen: isDeleteOpen,
-    onOpen: onDeleteOpen,
-    onClose: onDeleteClose,
-  } = useDisclosure();
+  const { isOpen: isAddOpen, onOpen: onAddOpen, onClose: onAddClose } = useDisclosure();
+  const { isOpen: isEditOpen, onOpen: onEditOpen, onClose: onEditClose } = useDisclosure();
+  const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosure();
 
   const deleteCancelRef = useRef();
   const toast = useToast();
@@ -99,19 +85,16 @@ const RolesPage = () => {
     inactive: 'gray',
   };
 
+  // 统一封装列表请求，优先走接口，失败时回落到本地数据
   const fetchRoles = useCallback(
     async (page = 1) => {
+      const controller = new AbortController();
       try {
-        const response = await fetch(
-          `${API_BASE_URL}/roles?page=${page}&pageSize=${PAGE_SIZE}`
-        );
-        const payload = await response
-          .json()
-          .catch(() => ({ data: rolesData, total: rolesData.length }));
-
-        if (!response.ok) {
-          throw new Error('Request failed');
-        }
+        const payload = await fetchRolesApi({
+          page,
+          pageSize: PAGE_SIZE,
+          signal: controller.signal,
+        });
 
         const listCandidate = Array.isArray(payload)
           ? payload
@@ -127,12 +110,7 @@ const RolesPage = () => {
           ? payload.records
           : [];
         const list = listCandidate.length ? listCandidate : rolesData;
-        const total =
-          typeof payload?.data?.total === 'number'
-            ? payload.data.total
-            : typeof payload?.total === 'number'
-            ? payload.total
-            : list.length;
+        const total = typeof payload?.data?.total === 'number' ? payload.data.total : typeof payload?.total === 'number' ? payload.total : list.length;
 
         setRoles(list);
         setTotalItems(total);
@@ -196,18 +174,7 @@ const RolesPage = () => {
     const timeoutId = setTimeout(() => controller.abort(), 3000);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/roles`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-        signal: controller.signal,
-      });
-      const payload = await response.json().catch(() => null);
-      if (!response.ok) {
-        throw new Error('Request failed');
-      }
+      await createRole({ data: formData, signal: controller.signal });
 
       const roleFromApi =
         payload?.data && typeof payload.data === 'object'
@@ -246,6 +213,7 @@ const RolesPage = () => {
     }
   };
 
+  // 打开编辑框时带入选中行数据，保持输入框受控
   const handleOpenEdit = (role) => {
     setSelectedRole(role);
     setEditFormData({
@@ -264,37 +232,13 @@ const RolesPage = () => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3000);
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/roles/${encodeURIComponent(editFormData.id)}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(editFormData),
-          signal: controller.signal,
-        }
-      );
-      const payload = await response.json().catch(() => null);
-      if (!response.ok) {
-        throw new Error('Request failed');
-      }
+      await updateRole({
+        id: editFormData.id,
+        data: editFormData,
+        signal: controller.signal,
+      });
 
-      const updatedRole =
-        payload?.data && typeof payload.data === 'object'
-          ? payload.data
-          : payload && typeof payload === 'object'
-          ? payload
-          : null;
-      const mergedRole = updatedRole
-        ? { ...editFormData, ...updatedRole }
-        : editFormData;
-
-      setRoles((prev) =>
-        prev.map((role) =>
-          role.id === editFormData.id ? { ...role, ...mergedRole } : role
-        )
-      );
+      setRoles((prev) => prev.map((role) => (role.id === editFormData.id ? { ...role, ...editFormData } : role)));
       onEditClose();
       toast({
         title: '角色更新成功',
@@ -316,6 +260,7 @@ const RolesPage = () => {
     }
   };
 
+  // 删除前先记录目标，弹出确认框避免误删
   const handleOpenDelete = (role) => {
     setDeleteTarget(role);
     onDeleteOpen();
@@ -327,16 +272,7 @@ const RolesPage = () => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3000);
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/roles/${encodeURIComponent(deleteTarget.id)}`,
-        {
-          method: 'DELETE',
-          signal: controller.signal,
-        }
-      );
-      if (!response.ok) {
-        throw new Error('Request failed');
-      }
+      await removeRole({ id: deleteTarget.id, signal: controller.signal });
 
       setRoles((prev) => prev.filter((role) => role.id !== deleteTarget.id));
       setTotalItems((prev) => Math.max(0, prev - 1));
@@ -370,13 +306,7 @@ const RolesPage = () => {
         </Button>
       </Flex>
 
-      <TableContainer
-        bg={tableBg}
-        borderRadius="lg"
-        boxShadow="sm"
-        border="1px solid"
-        borderColor={borderColor}
-      >
+      <TableContainer bg={tableBg} borderRadius="lg" boxShadow="sm" border="1px solid" borderColor={borderColor}>
         <Table variant="simple">
           <Thead>
             <Tr>
@@ -401,28 +331,13 @@ const RolesPage = () => {
                   </Text>
                 </Td>
                 <Td>
-                  <Badge colorScheme={statusColorScheme[role.status] || 'gray'}>
-                    {role.status === 'active' ? '启用' : '停用'}
-                  </Badge>
+                  <Badge colorScheme={statusColorScheme[role.status] || 'gray'}>{role.status === 'active' ? '启用' : '停用'}</Badge>
                 </Td>
                 <Td>{role.createdAt || '—'}</Td>
                 <Td textAlign="right">
                   <HStack justify="flex-end" spacing={3}>
-                    <IconButton
-                      aria-label="编辑角色"
-                      icon={<FiEdit2 />}
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleOpenEdit(role)}
-                    />
-                    {/* <IconButton
-                      aria-label="删除角色"
-                      icon={<FiTrash2 />}
-                      size="sm"
-                      variant="ghost"
-                      colorScheme="red"
-                      onClick={() => handleOpenDelete(role)}
-                    /> */}
+                    <IconButton aria-label="编辑角色" icon={<FiEdit2 />} size="sm" variant="ghost" onClick={() => handleOpenEdit(role)} />
+                    <IconButton aria-label="删除角色" icon={<FiTrash2 />} size="sm" variant="ghost" colorScheme="red" onClick={() => handleOpenDelete(role)} />
                   </HStack>
                 </Td>
               </Tr>
@@ -432,11 +347,7 @@ const RolesPage = () => {
       </TableContainer>
 
       <Flex justify="flex-end" mt={4}>
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={handlePageChange}
-        />
+        <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
       </Flex>
 
       <Modal isOpen={isAddOpen} onClose={onAddClose} isCentered>
@@ -447,38 +358,19 @@ const RolesPage = () => {
           <ModalBody pb={6}>
             <FormControl mb={4} isRequired>
               <FormLabel>角色名</FormLabel>
-              <Input
-                name="name"
-                placeholder="请输入角色名称"
-                value={formData.name}
-                onChange={handleInputChange}
-              />
+              <Input name="name" placeholder="请输入角色名称" value={formData.name} onChange={handleInputChange} />
             </FormControl>
             <FormControl mb={4} isRequired>
               <FormLabel>角色标识</FormLabel>
-              <Input
-                name="code"
-                placeholder="如 user, guest"
-                value={formData.code}
-                onChange={handleInputChange}
-              />
+              <Input name="code" placeholder="如 user, guest" value={formData.code} onChange={handleInputChange} />
             </FormControl>
             <FormControl mb={4}>
               <FormLabel>描述</FormLabel>
-              <Input
-                name="description"
-                placeholder="可填写角色说明"
-                value={formData.description}
-                onChange={handleInputChange}
-              />
+              <Input name="description" placeholder="可填写角色说明" value={formData.description} onChange={handleInputChange} />
             </FormControl>
             <FormControl>
               <FormLabel>状态</FormLabel>
-              <Select
-                name="status"
-                value={formData.status}
-                onChange={handleInputChange}
-              >
+              <Select name="status" value={formData.status} onChange={handleInputChange}>
                 <option value="active">启用</option>
                 <option value="inactive">停用</option>
               </Select>
@@ -488,11 +380,7 @@ const RolesPage = () => {
             <Button mr={3} onClick={onAddClose}>
               取消
             </Button>
-            <Button
-              colorScheme="teal"
-              onClick={handleSave}
-              isLoading={isSaving}
-            >
+            <Button colorScheme="teal" onClick={handleSave} isLoading={isSaving}>
               保存
             </Button>
           </ModalFooter>
@@ -507,35 +395,19 @@ const RolesPage = () => {
           <ModalBody pb={6}>
             <FormControl mb={4} isRequired>
               <FormLabel>角色名</FormLabel>
-              <Input
-                name="name"
-                value={editFormData.name}
-                onChange={handleEditInputChange}
-              />
+              <Input name="name" value={editFormData.name} onChange={handleEditInputChange} />
             </FormControl>
             <FormControl mb={4} isRequired>
               <FormLabel>角色标识</FormLabel>
-              <Input
-                name="code"
-                value={editFormData.code}
-                onChange={handleEditInputChange}
-              />
+              <Input name="code" value={editFormData.code} onChange={handleEditInputChange} />
             </FormControl>
             <FormControl mb={4}>
               <FormLabel>描述</FormLabel>
-              <Input
-                name="description"
-                value={editFormData.description}
-                onChange={handleEditInputChange}
-              />
+              <Input name="description" value={editFormData.description} onChange={handleEditInputChange} />
             </FormControl>
             <FormControl>
               <FormLabel>状态</FormLabel>
-              <Select
-                name="status"
-                value={editFormData.status}
-                onChange={handleEditInputChange}
-              >
+              <Select name="status" value={editFormData.status} onChange={handleEditInputChange}>
                 <option value="active">启用</option>
                 <option value="inactive">停用</option>
               </Select>
@@ -545,41 +417,25 @@ const RolesPage = () => {
             <Button mr={3} onClick={onEditClose}>
               取消
             </Button>
-            <Button
-              colorScheme="teal"
-              onClick={handleUpdate}
-              isLoading={isUpdating}
-            >
+            <Button colorScheme="teal" onClick={handleUpdate} isLoading={isUpdating}>
               保存修改
             </Button>
           </ModalFooter>
         </ModalContent>
       </Modal>
 
-      {/* <AlertDialog
-        isOpen={isDeleteOpen}
-        leastDestructiveRef={deleteCancelRef}
-        onClose={onDeleteClose}
-        isCentered
-      >
+      <AlertDialog isOpen={isDeleteOpen} leastDestructiveRef={deleteCancelRef} onClose={onDeleteClose} isCentered>
         <AlertDialogOverlay>
           <AlertDialogContent>
             <AlertDialogHeader fontSize="lg" fontWeight="bold">
               确认删除
             </AlertDialogHeader>
-            <AlertDialogBody>
-              确定要删除角色「{deleteTarget?.name}」吗？该操作不可撤销。
-            </AlertDialogBody>
+            <AlertDialogBody>确定要删除角色「{deleteTarget?.name}」吗？该操作不可撤销。</AlertDialogBody>
             <AlertDialogFooter>
               <Button ref={deleteCancelRef} onClick={onDeleteClose}>
                 取消
               </Button>
-              <Button
-                colorScheme="red"
-                onClick={handleDelete}
-                ml={3}
-                isLoading={isDeleting}
-              >
+              <Button colorScheme="red" onClick={handleDelete} ml={3} isLoading={isDeleting}>
                 删除
               </Button>
             </AlertDialogFooter>

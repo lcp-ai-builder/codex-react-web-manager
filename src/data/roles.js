@@ -1,3 +1,4 @@
+// 角色数据的本地占位，用于接口不可用时展示
 export const rolesData = [
   {
     id: 'R001',

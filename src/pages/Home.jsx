@@ -1,20 +1,5 @@
 import { useMemo, useState } from 'react';
-import {
-  Avatar,
-  Box,
-  Button,
-  Collapse,
-  Flex,
-  Heading,
-  Icon,
-  IconButton,
-  List,
-  ListItem,
-  Text,
-  VStack,
-  useColorMode,
-  useColorModeValue,
-} from '@chakra-ui/react';
+import { Avatar, Box, Button, Collapse, Flex, Heading, Icon, IconButton, List, ListItem, Text, VStack, useColorMode, useColorModeValue } from '@chakra-ui/react';
 import {
   FiHome,
   FiUsers,
@@ -62,10 +47,7 @@ const HomePage = () => {
   const headerBg = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
   const textMuted = useColorModeValue('gray.600', 'gray.400');
-  const menuHover = useColorModeValue(
-    { bg: 'teal.50', color: 'teal.500' },
-    { bg: 'teal.900', color: 'teal.200' }
-  );
+  const menuHover = useColorModeValue({ bg: 'teal.50', color: 'teal.500' }, { bg: 'teal.900', color: 'teal.200' });
   const handleLogout = () => {
     localStorage.removeItem('currentUser');
     navigate('/');
@@ -79,8 +61,8 @@ const HomePage = () => {
         label: '用户管理',
         children: [
           { icon: FiUser, label: '普通用户', path: '/home/users/regular' },
-          { icon: FiStar, label: 'VIP用户' }
-        ]
+          { icon: FiStar, label: 'VIP用户' },
+        ],
       },
       { icon: FiSettings, label: '系统设置' },
     ],
@@ -127,10 +109,7 @@ const HomePage = () => {
     return map;
   }, [menuItems]);
 
-  const currentPath =
-    location.pathname.length > 1 && location.pathname.endsWith('/')
-      ? location.pathname.slice(0, -1)
-      : location.pathname;
+  const currentPath = location.pathname.length > 1 && location.pathname.endsWith('/') ? location.pathname.slice(0, -1) : location.pathname;
   const currentLabel = menuPathLabelMap[currentPath] ?? '仪表盘';
 
   return (
@@ -150,12 +129,7 @@ const HomePage = () => {
         transition="width 0.2s ease"
       >
         {/* 侧边栏顶部：标题 + 折叠按钮 */}
-        <Flex
-          align="center"
-          justify={isCollapsed ? 'center' : 'space-between'}
-          mb={8}
-          gap={4}
-        >
+        <Flex align="center" justify={isCollapsed ? 'center' : 'space-between'} mb={8} gap={4}>
           {!isCollapsed && (
             <Heading size="md" whiteSpace="nowrap">
               管理后台
@@ -205,19 +179,10 @@ const HomePage = () => {
                   }}
                 >
                   <Icon as={item.icon} boxSize={5} />
-                  <Text
-                    fontWeight="medium"
-                    display={isCollapsed ? 'none' : 'block'}
-                  >
+                  <Text fontWeight="medium" display={isCollapsed ? 'none' : 'block'}>
                     {item.label}
                   </Text>
-                  {!isCollapsed && hasChildren && (
-                    <Icon
-                      as={isOpen ? FiChevronUp : FiChevronDown}
-                      boxSize={4}
-                      ml="auto"
-                    />
-                  )}
+                  {!isCollapsed && hasChildren && <Icon as={isOpen ? FiChevronUp : FiChevronDown} boxSize={4} ml="auto" />}
                 </ListItem>
                 {!isCollapsed && hasChildren && (
                   <Collapse in={isOpen} animateOpacity>
@@ -249,43 +214,18 @@ const HomePage = () => {
       </Box>
       {/* 右侧主区域：顶部固定，下面 Outlet 滚动 */}
       <Flex direction="column" flex="1" minH="100vh" overflow="hidden">
-        <Flex
-          as="header"
-          h="72px"
-          px={8}
-          align="center"
-          justify="space-between"
-          bg={headerBg}
-          borderBottom="1px solid"
-          borderColor={borderColor}
-          position="sticky"
-          top={0}
-          zIndex={1}
-        >
+        <Flex as="header" h="72px" px={8} align="center" justify="space-between" bg={headerBg} borderBottom="1px solid" borderColor={borderColor} position="sticky" top={0} zIndex={1}>
           <Heading size="md">当前位置：{currentLabel}</Heading>
           <Flex align="center" gap={4}>
-            <IconButton
-              aria-label="切换配色模式"
-              icon={colorMode === 'light' ? <FiMoon /> : <FiSun />}
-              onClick={toggleColorMode}
-              variant="ghost"
-              colorScheme="teal"
-            />
+            <IconButton aria-label="切换配色模式" icon={colorMode === 'light' ? <FiMoon /> : <FiSun />} onClick={toggleColorMode} variant="ghost" colorScheme="teal" />
             <Avatar size="sm" name={currentUser?.name || currentUser?.id} />
             <VStack spacing={0} align="flex-start">
-              <Text fontWeight="medium">
-                {currentUser?.name || currentUser?.id || '未登录用户'}
-              </Text>
+              <Text fontWeight="medium">{currentUser?.name || currentUser?.id || '未登录用户'}</Text>
               <Text fontSize="sm" color={textMuted}>
                 {currentUser?.email || 'admin@example.com'}
               </Text>
             </VStack>
-            <Button
-              leftIcon={<FiLogOut />}
-              variant="outline"
-              colorScheme="teal"
-              onClick={handleLogout}
-            >
+            <Button leftIcon={<FiLogOut />} variant="outline" colorScheme="teal" onClick={handleLogout}>
               退出
             </Button>
           </Flex>

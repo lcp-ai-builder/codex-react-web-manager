@@ -20,6 +20,7 @@
     "yarn.lock": true
   },
   "git.enableCommitSigning": true,
+  "prettier.printWidth": 200,
   "vite.autoStart": false,
   "workbench.colorTheme": "One Dark Bimbo",
   "workbench.iconTheme": "catppuccin-perfect-dark"
