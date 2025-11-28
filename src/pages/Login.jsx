@@ -4,6 +4,7 @@ import { MoonIcon, SunIcon } from '@chakra-ui/icons';
 import { useNavigate } from 'react-router-dom';
 import { login } from '@/services/api-services.js';
 import { hashPassword } from '@/components/hash-password';
+import useAuthStore from '@/store/useAuthStore.js';
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -16,6 +17,7 @@ const LoginPage = () => {
   const cardBg = useColorModeValue('white', 'gray.800');
   const cardShadow = useColorModeValue('lg', 'dark-lg');
   const subTextColor = useColorModeValue('gray.500', 'gray.400');
+  const setAuth = useAuthStore((state) => state.setAuth);
 
   const handleLogin = async (event) => {
     event.preventDefault();
@@ -26,7 +28,10 @@ const LoginPage = () => {
 
       if (data.success) {
         // 持久化当前登录人，方便首页判断是否为 admin
-        localStorage.setItem('currentUser', JSON.stringify({ id: userId, name: data?.name || userId }));
+        setAuth({
+          token: data?.token || '',
+          user: { id: userId, name: data?.name || userId },
+        });
         navigate('/home');
       } else {
         toast({

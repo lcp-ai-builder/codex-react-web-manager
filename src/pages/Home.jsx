@@ -22,21 +22,15 @@ import {
   FiLock,
 } from 'react-icons/fi';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import useAuthStore from '@/store/useAuthStore.js';
 
 const HomePage = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { colorMode, toggleColorMode } = useColorMode();
-  const currentUser = useMemo(() => {
-    try {
-      const stored = localStorage.getItem('currentUser');
-      if (stored) return JSON.parse(stored);
-    } catch (error) {
-      console.warn('读取本地用户信息失败：', error);
-    }
-    return { id: 'admin', name: '管理员' };
-  }, []);
+  const currentUser = useAuthStore((state) => state.currentUser) || { id: 'admin', name: '管理员' };
+  const clearAuth = useAuthStore((state) => state.clearAuth);
   const isAdmin = currentUser?.id?.toLowerCase?.() === 'admin';
   const [openMenus, setOpenMenus] = useState({
     用户管理: true,
@@ -49,8 +43,8 @@ const HomePage = () => {
   const textMuted = useColorModeValue('gray.600', 'gray.400');
   const menuHover = useColorModeValue({ bg: 'teal.50', color: 'teal.500' }, { bg: 'teal.900', color: 'teal.200' });
   const handleLogout = () => {
-    localStorage.removeItem('currentUser');
-    navigate('/');
+    clearAuth();
+    navigate('/login');
   };
 
   const baseMenuItems = useMemo(

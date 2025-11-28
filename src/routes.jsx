@@ -10,7 +10,7 @@ import OperatorsPage from '@/pages/Operators.jsx';
 
 const AppRoutes = () => (
   <Routes>
-    <Route path="/" element={<LoginPage />} />
+    <Route path="/login" element={<LoginPage />} />
     {/* /home 作为主框架，其余页面全部嵌套在 Outlet 中 */}
     <Route path="/home" element={<HomePage />}>
       <Route index element={<DashboardPage />} />

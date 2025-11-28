@@ -7,7 +7,6 @@ import {
   FormControl,
   FormLabel,
   Heading,
-  HStack,
   Input,
   Modal,
   ModalBody,
@@ -17,14 +16,7 @@ import {
   ModalHeader,
   ModalOverlay,
   Select,
-  Table,
-  TableContainer,
-  Tbody,
-  Td,
   Text,
-  Th,
-  Thead,
-  Tr,
   useColorModeValue,
   useDisclosure,
   useToast,
@@ -39,7 +31,7 @@ import {
   IconButton,
 } from '@chakra-ui/react';
 import { FiEdit2, FiPlus, FiSearch } from 'react-icons/fi';
-import Pagination from '@/components/Pagination.jsx';
+import DataTable from '@/components/DataTable.jsx';
 import { operatorsData } from '@/data/operators.js';
 import { rolesData } from '@/data/roles.js';
 import { fetchOperators, createOperator, updateOperator } from '@/services/api-services.js';
@@ -76,8 +68,6 @@ const OperatorsPage = () => {
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil(totalItems / PAGE_SIZE)), [totalItems]);
 
-  const tableBg = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
   const mutedText = useColorModeValue('gray.600', 'gray.400');
 
   const { isOpen: isAddOpen, onOpen: onAddOpen, onClose: onAddClose } = useDisclosure();
@@ -232,6 +222,71 @@ const OperatorsPage = () => {
     onDetailOpen();
   };
 
+  const columns = useMemo(
+    () => [
+      {
+        header: '编号',
+        render: (operator) => operator.code || operator.id,
+      },
+      {
+        header: '姓名',
+        render: (operator) => <Text fontWeight="medium">{operator.name}</Text>,
+      },
+      {
+        header: '登录名',
+        render: (operator) => operator.loginName,
+        visible: false,
+      },
+      {
+        header: '联系电话',
+        render: (operator) => operator.phone || '—',
+      },
+      {
+        header: '电子邮箱',
+        render: (operator) => operator.email || '—',
+        visible: false,
+      },
+      {
+        header: '所属角色',
+        render: (operator) => operator.roleName || '—',
+      },
+      {
+        header: '状态',
+        render: (operator) => (
+          <Badge colorScheme={statusColorScheme[operator.status] || 'gray'}>
+            <Text as="span" color={operator.status === 'inactive' ? 'red.500' : 'inherit'}>
+              {operator.status === 'active' ? '启用' : '停用'}
+            </Text>
+          </Badge>
+        ),
+      },
+      {
+        header: '创建时间',
+        render: (operator) => operator.createdAt || '—',
+        visible: false,
+      },
+      {
+        header: '最后登录',
+        render: (operator) => operator.lastLoginAt || '—',
+      },
+      {
+        header: '操作',
+        align: 'right',
+        render: (operator) => (
+          <Flex justify="flex-end" gap={2}>
+            <Tooltip label="查看全部信息" hasArrow>
+              <IconButton aria-label="查看全部信息" icon={<FiSearch />} size="sm" variant="ghost" onClick={() => handleOpenDetail(operator)} />
+            </Tooltip>
+            <Tooltip label="编辑信息" hasArrow>
+              <IconButton aria-label="编辑信息" icon={<FiEdit2 />} size="sm" variant="ghost" onClick={() => handleOpenEdit(operator)} />
+            </Tooltip>
+          </Flex>
+        ),
+      },
+    ],
+    [statusColorScheme, handleOpenDetail, handleOpenEdit, mutedText]
+  );
+
   const handleUpdate = async () => {
     if (!editFormData.name.trim() || !editFormData.loginName.trim()) return;
     setIsUpdating(true);
@@ -279,55 +334,7 @@ const OperatorsPage = () => {
         </Button>
       </Flex>
 
-      <TableContainer bg={tableBg} borderRadius="lg" boxShadow="sm" border="1px solid" borderColor={borderColor}>
-        <Table variant="simple">
-          <Thead>
-            <Tr>
-              <Th>编号</Th>
-              <Th>姓名</Th>
-              <Th>联系电话</Th>
-              <Th>所属角色</Th>
-              <Th>状态</Th>
-              <Th>最后登录</Th>
-              <Th textAlign="right">操作</Th>
-            </Tr>
-          </Thead>
-          <Tbody>
-            {operators.map((operator, index) => (
-              <Tr key={operator.id || operator.code} bg={index % 2 === 0 ? 'transparent' : useColorModeValue('gray.50', 'gray.700')}>
-                <Td>{operator.code || operator.id}</Td>
-              <Td>
-                <Text fontWeight="medium">{operator.name}</Text>
-              </Td>
-                <Td>{operator.phone || '—'}</Td>
-                <Td>{operator.roleName || '—'}</Td>
-                <Td>
-                  <Badge colorScheme={statusColorScheme[operator.status] || 'gray'}>
-                    <Text as="span" color={operator.status === 'inactive' ? 'red.500' : 'inherit'}>
-                      {operator.status === 'active' ? '启用' : '停用'}
-                    </Text>
-                  </Badge>
-                </Td>
-              <Td>{operator.lastLoginAt || '—'}</Td>
-              <Td textAlign="right">
-                <HStack justify="flex-end" spacing={3}>
-                  <Tooltip label="查看全部信息" hasArrow>
-                    <IconButton aria-label="查看全部信息" icon={<FiSearch />} size="sm" variant="ghost" onClick={() => handleOpenDetail(operator)} />
-                  </Tooltip>
-                  <Tooltip label="编辑信息" hasArrow>
-                    <IconButton aria-label="编辑信息" icon={<FiEdit2 />} size="sm" variant="ghost" onClick={() => handleOpenEdit(operator)} />
-                  </Tooltip>
-                </HStack>
-              </Td>
-            </Tr>
-            ))}
-          </Tbody>
-        </Table>
-      </TableContainer>
-
-      <Flex justify="flex-end" mt={4}>
-        <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
-      </Flex>
+      <DataTable columns={columns} data={operators} rowKey={(item) => item.id || item.code} pagination={{ currentPage, totalPages, onPageChange: handlePageChange }} />
 
       <Modal isOpen={isAddOpen} onClose={onAddClose} isCentered>
         <ModalOverlay />
@@ -394,13 +401,22 @@ const OperatorsPage = () => {
           <ModalBody pb={6} maxH="80vh" overflowY="auto">
             <Flex direction={{ base: 'column', md: 'row' }} gap={6} wrap="wrap" mb={4}>
               <Text>
-                操作员编号：<Text as="span" fontWeight="semibold">{editFormData.code || '—'}</Text>
+                操作员编号：
+                <Text as="span" fontWeight="semibold">
+                  {editFormData.code || '—'}
+                </Text>
               </Text>
               <Text>
-                操作员姓名：<Text as="span" fontWeight="semibold">{editFormData.name || '—'}</Text>
+                操作员姓名：
+                <Text as="span" fontWeight="semibold">
+                  {editFormData.name || '—'}
+                </Text>
               </Text>
               <Text>
-                登录名：<Text as="span" fontWeight="semibold">{editFormData.loginName || '—'}</Text>
+                登录名：
+                <Text as="span" fontWeight="semibold">
+                  {editFormData.loginName || '—'}
+                </Text>
               </Text>
             </Flex>
             <SimpleGrid columns={{ base: 1, md: 4 }} spacing={4}>

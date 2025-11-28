@@ -18,14 +18,7 @@ import {
   ModalHeader,
   ModalOverlay,
   Select,
-  Table,
-  TableContainer,
-  Tbody,
-  Td,
   Text,
-  Th,
-  Thead,
-  Tr,
   useColorModeValue,
   useDisclosure,
   useToast,
@@ -38,7 +31,7 @@ import {
   Switch,
 } from '@chakra-ui/react';
 import { FiEdit2, FiPlus } from 'react-icons/fi';
-import Pagination from '@/components/Pagination.jsx';
+import DataTable from '@/components/DataTable.jsx';
 import { rolesData } from '@/data/roles.js';
 import { fetchRoles as fetchRolesApi, createRole, updateRole, updateRoleStatus } from '@/services/api-services.js';
 
@@ -71,8 +64,6 @@ const RolesPage = () => {
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil(totalItems / PAGE_SIZE)), [totalItems]);
 
-  const tableBg = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
   const mutedText = useColorModeValue('gray.600', 'gray.400');
 
   const { isOpen: isAddOpen, onOpen: onAddOpen, onClose: onAddClose } = useDisclosure();
@@ -325,6 +316,60 @@ const RolesPage = () => {
     }
   };
 
+  const columns = useMemo(
+    () => [
+      {
+        header: '角色名',
+        render: (role) => (
+          <Text fontWeight="medium">
+            {role.name}
+          </Text>
+        ),
+      },
+      { header: '角色标识', render: (role) => role.code },
+      {
+        header: '描述',
+        render: (role) => (
+          <Text color={mutedText} noOfLines={2}>
+            {role.description || '—'}
+          </Text>
+        ),
+      },
+      {
+        header: '状态',
+        render: (role) => (
+          <Badge colorScheme={statusColorScheme[role.status] || 'gray'}>
+            <Text as="span" color={role.status === 'inactive' ? 'red.500' : 'inherit'}>
+              {role.status === 'active' ? '启用' : '停用'}
+            </Text>
+          </Badge>
+        ),
+      },
+      { header: '创建时间', render: (role) => role.createdAt || '—' },
+      {
+        header: '启用/停用',
+        render: (role) => (
+          <HStack spacing={2}>
+            <Switch isChecked={role.status === 'active'} onChange={() => handleToggleStatus(role)} isDisabled={isStatusUpdating} colorScheme="teal" size="sm" />
+            <Text fontSize="sm" color={mutedText}>
+              {role.status === 'active' ? '启用' : '停用'}
+            </Text>
+          </HStack>
+        ),
+      },
+      {
+        header: '操作',
+        align: 'right',
+        render: (role) => (
+          <HStack justify="flex-end" spacing={3}>
+            <IconButton aria-label="编辑角色" icon={<FiEdit2 />} size="sm" variant="ghost" onClick={() => handleOpenEdit(role)} />
+          </HStack>
+        ),
+      },
+    ],
+    [handleToggleStatus, handleOpenEdit, isStatusUpdating, mutedText, statusColorScheme]
+  );
+
   return (
     <Box>
       <Flex justify="space-between" align="center" mb={6}>
@@ -334,67 +379,7 @@ const RolesPage = () => {
         </Button>
       </Flex>
 
-      <TableContainer bg={tableBg} borderRadius="lg" boxShadow="sm" border="1px solid" borderColor={borderColor}>
-        <Table variant="simple">
-          <Thead>
-            <Tr>
-              <Th>角色名</Th>
-              <Th>角色标识</Th>
-              <Th>描述</Th>
-              <Th>状态</Th>
-              <Th>创建时间</Th>
-              <Th>启用/停用</Th>
-              <Th textAlign="right">操作</Th>
-            </Tr>
-          </Thead>
-          <Tbody>
-            {roles.map((role, index) => (
-              <Tr key={role.id} bg={index % 2 === 0 ? 'transparent' : useColorModeValue('gray.50', 'gray.700')}>
-                <Td>
-                  <Text fontWeight="medium">{role.name}</Text>
-                </Td>
-                <Td>{role.code}</Td>
-                <Td>
-                  <Text color={mutedText} noOfLines={2}>
-                    {role.description || '—'}
-                  </Text>
-                </Td>
-                <Td>
-                  <Badge colorScheme={statusColorScheme[role.status] || 'gray'}>
-                    <Text as="span" color={role.status === 'inactive' ? 'red.500' : 'inherit'}>
-                      {role.status === 'active' ? '启用' : '停用'}
-                    </Text>
-                  </Badge>
-                </Td>
-                <Td>{role.createdAt || '—'}</Td>
-                <Td>
-                  <HStack spacing={2}>
-                    <Switch
-                      isChecked={role.status === 'active'}
-                      onChange={() => handleToggleStatus(role)}
-                      isDisabled={isStatusUpdating}
-                      colorScheme="teal"
-                      size="sm"
-                    />
-                    <Text fontSize="sm" color={mutedText}>
-                      {role.status === 'active' ? '启用' : '停用'}
-                    </Text>
-                  </HStack>
-                </Td>
-                <Td textAlign="right">
-                  <HStack justify="flex-end" spacing={3}>
-                    <IconButton aria-label="编辑角色" icon={<FiEdit2 />} size="sm" variant="ghost" onClick={() => handleOpenEdit(role)} />
-                  </HStack>
-                </Td>
-              </Tr>
-            ))}
-          </Tbody>
-        </Table>
-      </TableContainer>
-
-      <Flex justify="flex-end" mt={4}>
-        <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
-      </Flex>
+      <DataTable columns={columns} data={roles} rowKey={(item) => item.id} pagination={{ currentPage, totalPages, onPageChange: handlePageChange }} />
 
       <Modal isOpen={isAddOpen} onClose={onAddClose} isCentered>
         <ModalOverlay />
