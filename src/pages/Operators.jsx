@@ -33,33 +33,35 @@ import {
 import { FiEdit2, FiPlus, FiSearch } from 'react-icons/fi';
 import DataTable from '@/components/DataTable.jsx';
 import { operatorsData } from '@/data/operators.js';
-import { rolesData } from '@/data/roles.js';
-import { fetchOperators, createOperator, updateOperator } from '@/services/api-services.js';
+import { rolesData as rolesMock } from '@/data/roles.js';
+import { fetchOperators, createOperator, updateOperator, fetchRoles as fetchRolesApi } from '@/services/api-services.js';
 
 const PAGE_SIZE = 10;
 
 const OperatorsPage = () => {
   const [operators, setOperators] = useState(operatorsData);
+  const [rolesOptions, setRolesOptions] = useState(rolesMock);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalItems, setTotalItems] = useState(operatorsData.length);
   const [formData, setFormData] = useState({
-    code: '',
+    operatorNo: '',
     name: '',
     loginName: '',
+    loginPassword: '',
     phone: '',
     email: '',
-    roleName: rolesData[0]?.name || '',
-    status: 'active',
+    roleId: rolesOptions[0]?.id || '',
+    status: 'ACTIVE',
   });
   const [editFormData, setEditFormData] = useState({
     id: '',
-    code: '',
+    operatorNo: '',
     name: '',
     loginName: '',
     phone: '',
     email: '',
-    roleName: rolesData[0]?.name || '',
-    status: 'active',
+    roleId: rolesOptions[0]?.id || '',
+    status: 'ACTIVE',
   });
   const [isSaving, setIsSaving] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -75,9 +77,46 @@ const OperatorsPage = () => {
   const toast = useToast();
 
   const statusColorScheme = {
+    ACTIVE: 'green',
+    INACTIVE: 'gray',
     active: 'green',
     inactive: 'gray',
   };
+
+  // 角色选项：优先拉取后端，失败回落到 mock
+  const fetchRolesOptions = useCallback(async () => {
+    try {
+      const payload = await fetchRolesApi({ page: 1, pageSize: 100 });
+      const listCandidate = Array.isArray(payload)
+        ? payload
+        : Array.isArray(payload?.data?.list)
+        ? payload.data.list
+        : Array.isArray(payload?.data?.records)
+        ? payload.data.records
+        : Array.isArray(payload?.data)
+        ? payload.data
+        : Array.isArray(payload?.list)
+        ? payload.list
+        : Array.isArray(payload?.records)
+        ? payload.records
+        : [];
+      const list = (listCandidate.length ? listCandidate : rolesMock).map((role, idx) => ({
+        ...role,
+        id: typeof role.id === 'number' ? role.id : Number(role.id) || idx + 1,
+      }));
+      setRolesOptions(list);
+      // 同步表单默认角色
+      if (!formData.roleId && list[0]?.id) {
+        setFormData((prev) => ({ ...prev, roleId: list[0].id }));
+      }
+      if (!editFormData.roleId && list[0]?.id) {
+        setEditFormData((prev) => ({ ...prev, roleId: list[0].id }));
+      }
+    } catch (error) {
+      console.warn('获取角色选项失败：', error);
+      setRolesOptions(rolesMock);
+    }
+  }, [formData.roleId, editFormData.roleId]);
 
   const fetchList = useCallback(
     async (page = 1) => {
@@ -122,7 +161,17 @@ const OperatorsPage = () => {
 
   useEffect(() => {
     fetchList(1);
-  }, [fetchList]);
+    fetchRolesOptions();
+  }, [fetchList, fetchRolesOptions]);
+
+  useEffect(() => {
+    if (!formData.roleId && rolesOptions[0]?.id) {
+      setFormData((prev) => ({ ...prev, roleId: rolesOptions[0].id }));
+    }
+    if (!editFormData.roleId && rolesOptions[0]?.id) {
+      setEditFormData((prev) => ({ ...prev, roleId: rolesOptions[0].id }));
+    }
+  }, [rolesOptions]); 
 
   const handlePageChange = (nextPage) => {
     if (nextPage < 1 || nextPage > totalPages) return;
@@ -147,36 +196,69 @@ const OperatorsPage = () => {
 
   const handleOpenAdd = () => {
     setFormData({
-      code: '',
+      operatorNo: `OP${String(Date.now()).slice(-5)}`,
       name: '',
       loginName: '',
       loginPassword: '',
       phone: '',
       email: '',
-      roleName: rolesData[0]?.name || '',
-      status: 'active',
+      roleId: rolesOptions[0]?.id || '',
+      status: 'ACTIVE',
     });
     onAddOpen();
   };
 
   const handleSave = async () => {
-    if (!formData.name.trim() || !formData.loginName.trim()) return;
+    const roleIdValue = formData.roleId ?? '';
+    if (
+      !formData.operatorNo.trim() ||
+      !formData.name.trim() ||
+      !formData.loginName.trim() ||
+      !formData.phone.trim() ||
+      (typeof roleIdValue === 'string' ? !roleIdValue.trim() : roleIdValue === null || roleIdValue === undefined)
+    ) {
+      toast({
+        title: '请填写必填项',
+        status: 'warning',
+        position: 'top',
+        duration: 2500,
+        isClosable: true,
+      });
+      return;
+    }
     setIsSaving(true);
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3000);
 
     try {
-      const payload = await createOperator({ data: formData, signal: controller.signal });
+      const payloadData = {
+        operatorNo: formData.operatorNo,
+        name: formData.name,
+        loginName: formData.loginName,
+        phone: formData.phone,
+        roleId: Number(formData.roleId) || formData.roleId,
+      };
+      if (formData.email) payloadData.email = formData.email;
+
+      const payload = await createOperator({
+        data: payloadData,
+        signal: controller.signal,
+      });
+      const roleInfo = rolesOptions.find((r) => r.id === formData.roleId);
       const operatorFromApi = payload?.data && typeof payload.data === 'object' ? payload.data : payload && typeof payload === 'object' ? payload : null;
       const newOperator =
         operatorFromApi && typeof operatorFromApi === 'object'
-          ? { ...formData, ...operatorFromApi }
+          ? { ...formData, ...operatorFromApi, loginPassword: undefined }
           : {
               id: `OP${String(Date.now()).slice(-5)}`,
-              code: formData.code || `OP${String(Date.now()).slice(-5)}`,
+              operatorNo: formData.operatorNo || `OP${String(Date.now()).slice(-5)}`,
+              code: formData.operatorNo || `OP${String(Date.now()).slice(-5)}`,
               createdAt: new Date().toISOString().slice(0, 10),
               lastLoginAt: '-',
               ...formData,
+              status: (formData.status || 'ACTIVE').toUpperCase(),
+              roleName: roleInfo?.name,
+              loginPassword: undefined,
             };
       setOperators((prev) => [newOperator, ...prev]);
       setTotalItems((prev) => prev + 1);
@@ -206,13 +288,13 @@ const OperatorsPage = () => {
   const handleOpenEdit = (operator) => {
     setEditFormData({
       id: operator.id,
-      code: operator.code || '',
+      operatorNo: operator.operatorNo || operator.operator_no || operator.code || '',
       name: operator.name || '',
       loginName: operator.loginName || '',
       phone: operator.phone || '',
       email: operator.email || '',
-      roleName: operator.roleName || rolesData[0]?.name || '',
-      status: operator.status || 'active',
+      roleId: operator.roleId || operator.role_id || rolesOptions.find((r) => r.name === operator.roleName)?.id || rolesOptions[0]?.id || '',
+      status: operator.status || 'ACTIVE',
     });
     onEditOpen();
   };
@@ -226,7 +308,7 @@ const OperatorsPage = () => {
     () => [
       {
         header: '编号',
-        render: (operator) => operator.code || operator.id,
+        render: (operator) => operator.operatorNo || operator.operator_no || operator.code || operator.id,
       },
       {
         header: '姓名',
@@ -248,14 +330,14 @@ const OperatorsPage = () => {
       },
       {
         header: '所属角色',
-        render: (operator) => operator.roleName || '—',
+        render: (operator) => operator.roleName || rolesOptions.find((r) => r.id === operator.roleId || r.id === operator.role_id)?.name || '—',
       },
       {
         header: '状态',
         render: (operator) => (
           <Badge colorScheme={statusColorScheme[operator.status] || 'gray'}>
-            <Text as="span" color={operator.status === 'inactive' ? 'red.500' : 'inherit'}>
-              {operator.status === 'active' ? '启用' : '停用'}
+            <Text as="span" color={String(operator.status).toUpperCase() === 'INACTIVE' ? 'red.500' : 'inherit'}>
+              {String(operator.status).toUpperCase() === 'ACTIVE' ? '启用' : '停用'}
             </Text>
           </Badge>
         ),
@@ -295,13 +377,22 @@ const OperatorsPage = () => {
     try {
       const payload = await updateOperator({
         id: editFormData.id,
-        data: editFormData,
+        data: {
+          operatorNo: editFormData.operatorNo || editFormData.code,
+          name: editFormData.name,
+          loginName: editFormData.loginName,
+          phone: editFormData.phone,
+          email: editFormData.email || undefined,
+          roleId: Number(editFormData.roleId) || editFormData.roleId,
+        },
         signal: controller.signal,
       });
       const updated = payload?.data && typeof payload.data === 'object' ? payload.data : payload && typeof payload === 'object' ? payload : null;
       const merged = updated ? { ...editFormData, ...updated } : editFormData;
+      const roleInfo = rolesOptions.find((r) => r.id === (merged.roleId || merged.role_id));
+      const mergedWithRoleName = { ...merged, roleName: merged.roleName || roleInfo?.name };
 
-      setOperators((prev) => prev.map((op) => (op.id === editFormData.id ? { ...op, ...merged } : op)));
+      setOperators((prev) => prev.map((op) => (op.id === editFormData.id ? { ...op, ...mergedWithRoleName } : op)));
       onEditClose();
       toast({
         title: '操作员更新成功',
@@ -343,9 +434,9 @@ const OperatorsPage = () => {
           <ModalCloseButton />
           <ModalBody pb={6} maxH="75vh" overflowY="auto">
             <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
-              <FormControl>
+              <FormControl isRequired>
                 <FormLabel>操作员编号</FormLabel>
-                <Input name="code" placeholder="可不填，默认自动生成" value={formData.code} onChange={handleInputChange} />
+                <Input name="operatorNo" placeholder="" value={formData.operatorNo} onChange={handleInputChange} />
               </FormControl>
               <FormControl isRequired>
                 <FormLabel>操作员姓名</FormLabel>
@@ -356,6 +447,10 @@ const OperatorsPage = () => {
                 <Input name="loginName" value={formData.loginName} onChange={handleInputChange} />
               </FormControl>
               <FormControl>
+                <FormLabel>登录密码</FormLabel>
+                <Input name="loginPassword" type="password" value={formData.loginPassword} onChange={handleInputChange} />
+              </FormControl>
+              <FormControl isRequired>
                 <FormLabel>联系电话</FormLabel>
                 <Input name="phone" value={formData.phone} onChange={handleInputChange} />
               </FormControl>
@@ -365,9 +460,9 @@ const OperatorsPage = () => {
               </FormControl>
               <FormControl>
                 <FormLabel>所属角色</FormLabel>
-                <Select name="roleName" value={formData.roleName} onChange={handleInputChange}>
-                  {rolesData.map((role) => (
-                    <option key={role.id} value={role.name}>
+                <Select name="roleId" value={formData.roleId} onChange={handleInputChange}>
+                  {rolesOptions.map((role) => (
+                    <option key={role.id} value={role.id}>
                       {role.name}
                     </option>
                   ))}
@@ -403,7 +498,7 @@ const OperatorsPage = () => {
               <Text>
                 操作员编号：
                 <Text as="span" fontWeight="semibold">
-                  {editFormData.code || '—'}
+                  {editFormData.operatorNo || '—'}
                 </Text>
               </Text>
               <Text>
@@ -430,9 +525,9 @@ const OperatorsPage = () => {
               </FormControl>
               <FormControl>
                 <FormLabel>所属角色</FormLabel>
-                <Select name="roleName" value={editFormData.roleName} onChange={handleEditInputChange}>
-                  {rolesData.map((role) => (
-                    <option key={role.id} value={role.name}>
+                <Select name="roleId" value={editFormData.roleId} onChange={handleEditInputChange}>
+                  {rolesOptions.map((role) => (
+                    <option key={role.id} value={role.id}>
                       {role.name}
                     </option>
                   ))}

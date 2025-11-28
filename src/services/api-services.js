@@ -1,10 +1,13 @@
 import { API_BASE_URL } from '@/config/api.js';
+import useAuthStore from '@/store/useAuthStore.js';
 
 // 统一的请求封装：返回 JSON，异常由调用方处理
 const request = async (path, options = {}) => {
+  const { token } = useAuthStore.getState();
   const response = await fetch(`${API_BASE_URL}${path}`, {
     headers: {
       'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(options.headers || {}),
     },
     ...options,
