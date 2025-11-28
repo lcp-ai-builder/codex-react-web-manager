@@ -50,6 +50,24 @@ export const deleteUser = async ({ id, signal }) =>
     signal,
   });
 
+// 操作员
+export const fetchOperators = async ({ page, pageSize, signal }) =>
+  request(`/operators?page=${page}&pageSize=${pageSize}`, { signal });
+
+export const createOperator = async ({ data, signal }) =>
+  request('/operators', {
+    method: 'POST',
+    body: JSON.stringify(data),
+    signal,
+  });
+
+export const updateOperator = async ({ id, data, signal }) =>
+  request(`/operators/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+    signal,
+  });
+
 // 角色
 export const fetchRoles = async ({ page, pageSize, signal }) =>
   request(`/roles?page=${page}&pageSize=${pageSize}`, { signal });

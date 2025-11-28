@@ -1,0 +1,26 @@
+export const operatorsData = [
+  {
+    id: 'OP001',
+    code: 'OP001',
+    name: '张三',
+    loginName: 'zhangsan',
+    phone: '13800000001',
+    email: 'zhangsan@example.com',
+    roleName: '普通用户',
+    status: 'active',
+    createdAt: '2024-01-12',
+    lastLoginAt: '2024-03-01 09:15',
+  },
+  {
+    id: 'OP002',
+    code: 'OP002',
+    name: '李四',
+    loginName: 'lisi',
+    phone: '13800000002',
+    email: 'lisi@example.com',
+    roleName: '访客用户',
+    status: 'inactive',
+    createdAt: '2024-02-05',
+    lastLoginAt: '2024-03-02 18:40',
+  },
+];

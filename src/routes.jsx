@@ -6,6 +6,7 @@ import DashboardPage from '@/pages/Dashboard.jsx';
 import RegularUsersPage from '@/pages/RegularUsers.jsx';
 import MaintenancePage from '@/pages/MaintenancePage.jsx';
 import RolesPage from '@/pages/Roles.jsx';
+import OperatorsPage from '@/pages/Operators.jsx';
 
 const AppRoutes = () => (
   <Routes>
@@ -14,7 +15,7 @@ const AppRoutes = () => (
     <Route path="/home" element={<HomePage />}>
       <Route index element={<DashboardPage />} />
       <Route path="users/regular" element={<RegularUsersPage />} />
-      <Route path="system/operator" element={<MaintenancePage title="操作员管理" />} />
+      <Route path="system/operator" element={<OperatorsPage />} />
       <Route path="system/roles" element={<RolesPage />} />
       <Route path="system/menus" element={<MaintenancePage title="菜单管理" />} />
       <Route path="system/permissions" element={<MaintenancePage title="权限分配" />} />
