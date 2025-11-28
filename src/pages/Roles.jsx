@@ -373,16 +373,17 @@ const RolesPage = () => {
 
   return (
     <Box>
-      <Flex justify="space-between" align="center" mb={6}>
-        <Heading size="lg" display="flex" alignItems="center" gap={2}>
-          <FiKey /> 角色管理
-        </Heading>
-        <Button leftIcon={<FiPlus />} colorScheme="teal" onClick={handleOpenAdd}>
-          新建角色
-        </Button>
-      </Flex>
-
-      <DataTable columns={columns} data={roles} rowKey={(item) => item.id} pagination={{ currentPage, totalPages, onPageChange: handlePageChange }} />
+      <DataTable
+        columns={columns}
+        data={roles}
+        rowKey={(item) => item.id}
+        pagination={{ currentPage, totalPages, onPageChange: handlePageChange }}
+        title="角色管理"
+        headerIcon={FiKey}
+        addText="新建角色"
+        addIcon={FiPlus}
+        onAdd={handleOpenAdd}
+      />
 
       <Modal isOpen={isAddOpen} onClose={onAddClose} isCentered>
         <ModalOverlay />

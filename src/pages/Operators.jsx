@@ -483,16 +483,17 @@ const OperatorsPage = () => {
 
   return (
     <Box>
-      <Flex justify="space-between" align="center" mb={6}>
-        <Heading size="lg" display="flex" alignItems="center" gap={2}>
-          <FiUserCheck /> 操作员管理
-        </Heading>
-        <Button leftIcon={<FiPlus />} colorScheme="teal" onClick={handleOpenAdd}>
-          新建操作员
-        </Button>
-      </Flex>
-
-      <DataTable columns={columns} data={operators} rowKey={(item) => item.id || item.code} pagination={{ currentPage, totalPages, onPageChange: handlePageChange }} />
+      <DataTable
+        columns={columns}
+        data={operators}
+        rowKey={(item) => item.id || item.code}
+        pagination={{ currentPage, totalPages, onPageChange: handlePageChange }}
+        title="操作员管理"
+        headerIcon={FiUserCheck}
+        addText="新建操作员"
+        addIcon={FiPlus}
+        onAdd={handleOpenAdd}
+      />
 
       <Modal isOpen={isAddOpen} onClose={onAddClose} isCentered>
         <ModalOverlay />

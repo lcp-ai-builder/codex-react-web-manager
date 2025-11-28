@@ -1,7 +1,7 @@
-import { Box, Flex, Table, TableContainer, Tbody, Td, Th, Thead, Tr, useColorModeValue } from '@chakra-ui/react';
+import { Box, Flex, Table, TableContainer, Tbody, Td, Th, Thead, Tr, useColorModeValue, Heading, Button } from '@chakra-ui/react';
 import Pagination from './Pagination.jsx';
 
-const DataTable = ({ columns = [], data = [], rowKey = 'id', pagination, containerProps = {}, tableProps = {} }) => {
+const DataTable = ({ columns = [], data = [], rowKey = 'id', pagination, containerProps = {}, tableProps = {}, title, headerIcon: HeaderIcon, addText, addIcon: AddIcon, onAdd }) => {
   const tableBg = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
   const zebraBg = useColorModeValue('gray.50', 'gray.700');
@@ -11,6 +11,20 @@ const DataTable = ({ columns = [], data = [], rowKey = 'id', pagination, contain
 
   return (
     <Box>
+      {(title || HeaderIcon || (addText && onAdd)) && (
+        <Flex justify="space-between" align="center" mb={4}>
+          <Heading size="lg" display="flex" alignItems="center" gap={2}>
+            {HeaderIcon ? <HeaderIcon /> : null}
+            {title}
+          </Heading>
+          {addText && onAdd ? (
+            <Button leftIcon={AddIcon ? <AddIcon /> : undefined} colorScheme="teal" onClick={onAdd}>
+              {addText}
+            </Button>
+          ) : null}
+        </Flex>
+      )}
+
       <TableContainer bg={tableBg} borderRadius="lg" boxShadow="sm" border="1px solid" borderColor={borderColor} {...containerProps}>
         <Table variant="simple" {...tableProps}>
           <Thead>
