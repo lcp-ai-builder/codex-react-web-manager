@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 // prettier-ignore
 import { AlertDialog, AlertDialogBody, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogOverlay, Badge, Box, Button, Flex, FormControl, FormLabel, Heading, Input, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, Select, Table, TableContainer, Tbody, Td, Text, Th, Thead, Tr, useColorModeValue, useDisclosure, useToast, IconButton, HStack } from '@chakra-ui/react';
 // prettier-ignore
@@ -6,14 +6,44 @@ import { FiEdit2, FiTrash2 } from 'react-icons/fi';
 import Pagination from '@/components/Pagination.jsx';
 import { regularUsersData } from '@/data/regularUsers.js';
 import { fetchUsers as fetchUsersApi, addUser, updateUser, deleteUser } from '@/services/api-services.js';
+import usePagedList from '@/hooks/usePagedList.js';
 
 const PAGE_SIZE = 10; // 统一设置分页大小，方便后续联动
 
 const RegularUsersPage = () => {
-  // 将模拟数据放入本地状态，方便增删改实时生效
-  const [users, setUsers] = useState(regularUsersData);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalItems, setTotalItems] = useState(regularUsersData.length);
+  // 通过通用分页 Hook 管理列表和分页信息，接口不可用时自动回退到本地 mock 数据
+  const {
+    items: users,
+    setItems: setUsers,
+    currentPage,
+    setCurrentPage,
+    totalItems,
+    setTotalItems,
+    totalPages,
+    loadPage,
+  } = usePagedList({
+    pageSize: PAGE_SIZE,
+    initialData: regularUsersData,
+    fetchPage: ({ page, pageSize, signal }) =>
+      fetchUsersApi({
+        page,
+        pageSize,
+        signal,
+      }),
+    onError: (error, { page }) => {
+      console.log('获取用户列表失败：', error);
+      toast({
+        title: '获取用户列表失败',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+      // 首次加载失败时 Hook 会自动回退到本地 mock，这里只需处理提示
+      if (page === 1) {
+        return;
+      }
+    },
+  });
   // 表单仅用于演示添加用户的结构，不会真的写入 mock 数据
   const [formData, setFormData] = useState({
     name: '',
@@ -32,7 +62,6 @@ const RegularUsersPage = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
   const { isOpen: isAddOpen, onOpen: onAddOpen, onClose: onAddClose } = useDisclosure();
   const { isOpen: isEditOpen, onOpen: onEditOpen, onClose: onEditClose } = useDisclosure();
   const { isOpen: isSuccessOpen, onOpen: onSuccessOpen, onClose: onSuccessClose } = useDisclosure();
@@ -45,66 +74,10 @@ const RegularUsersPage = () => {
   const borderColor = useColorModeValue('gray.200', 'gray.700');
   const mutedText = useColorModeValue('gray.600', 'gray.400');
 
-  // 获取列表，失败时回退到本地 mock
-  const fetchUsers = useCallback(
-    async (page = 1) => {
-      const controller = new AbortController();
-      try {
-        const payload = await fetchUsersApi({
-          page,
-          pageSize: PAGE_SIZE,
-          signal: controller.signal,
-        });
-        const listCandidate = Array.isArray(payload)
-          ? payload
-          : Array.isArray(payload?.data?.list)
-          ? payload.data.list
-          : Array.isArray(payload?.data?.records)
-          ? payload.data.records
-          : Array.isArray(payload?.data)
-          ? payload.data
-          : Array.isArray(payload?.list)
-          ? payload.list
-          : Array.isArray(payload?.records)
-          ? payload.records
-          : [];
-        const list = listCandidate.length ? listCandidate : regularUsersData;
-        const total =
-          typeof payload?.data?.total === 'number'
-            ? payload.data.total
-            : typeof payload?.data?.pagination?.total === 'number'
-            ? payload.data.pagination.total
-            : typeof payload?.total === 'number'
-            ? payload.total
-            : list.length;
-        setUsers(list);
-        setTotalItems(total);
-        setCurrentPage(page);
-      } catch (error) {
-        console.log('获取用户列表失败：', error);
-        toast({
-          title: '获取用户列表失败',
-          status: 'error',
-          duration: 3000,
-          isClosable: true,
-        });
-        if (page === 1) {
-          setUsers(regularUsersData);
-          setTotalItems(regularUsersData.length);
-        }
-      }
-    },
-    [toast]
-  );
-
-  useEffect(() => {
-    fetchUsers(1);
-  }, [fetchUsers]);
-
   // 切换分页时访问正式接口
   const handlePageChange = (nextPage) => {
     if (nextPage < 1 || nextPage > totalPages) return;
-    fetchUsers(nextPage);
+    loadPage(nextPage);
   };
 
   // 实时收集表单输入

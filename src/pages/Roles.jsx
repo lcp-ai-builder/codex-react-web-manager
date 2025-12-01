@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Badge,
   Box,
@@ -34,14 +34,42 @@ import { FiEdit2, FiPlus, FiKey } from 'react-icons/fi';
 import DataTable from '@/components/DataTable.jsx';
 import { rolesData } from '@/data/roles.js';
 import { fetchRoles as fetchRolesApi, createRole, updateRole, updateRoleStatus } from '@/services/api-services.js';
+import usePagedList from '@/hooks/usePagedList.js';
 
 const PAGE_SIZE = 10;
 
 const RolesPage = () => {
   // 角色数据与分页状态，默认读取本地 mock
-  const [roles, setRoles] = useState(rolesData);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalItems, setTotalItems] = useState(rolesData.length);
+  const {
+    items: roles,
+    setItems: setRoles,
+    currentPage,
+    setCurrentPage,
+    totalItems,
+    setTotalItems,
+    totalPages,
+    loadPage,
+  } = usePagedList({
+    pageSize: PAGE_SIZE,
+    initialData: rolesData,
+    fetchPage: ({ page, pageSize, signal }) =>
+      fetchRolesApi({
+        page,
+        pageSize,
+        signal,
+      }),
+    onError: (error, { page }) => {
+      console.warn('获取角色列表失败：', error);
+      toast({
+        title: '获取角色列表失败',
+        status: 'error',
+        position: 'top',
+        duration: 3000,
+        isClosable: true,
+      });
+      if (page === 1) return;
+    },
+  });
   const [formData, setFormData] = useState({
     name: '',
     code: '',
@@ -62,8 +90,6 @@ const RolesPage = () => {
   const [isStatusUpdating, setIsStatusUpdating] = useState(false);
   const statusCancelRef = useRef();
 
-  const totalPages = useMemo(() => Math.max(1, Math.ceil(totalItems / PAGE_SIZE)), [totalItems]);
-
   const mutedText = useColorModeValue('gray.600', 'gray.400');
 
   const { isOpen: isAddOpen, onOpen: onAddOpen, onClose: onAddClose } = useDisclosure();
@@ -76,60 +102,13 @@ const RolesPage = () => {
   };
 
   // 统一封装列表请求，优先走接口，失败时回落到本地数据
-  const fetchRoles = useCallback(
-    async (page = 1) => {
-      const controller = new AbortController();
-      try {
-        const payload = await fetchRolesApi({
-          page,
-          pageSize: PAGE_SIZE,
-          signal: controller.signal,
-        });
-
-        const listCandidate = Array.isArray(payload)
-          ? payload
-          : Array.isArray(payload?.data?.list)
-          ? payload.data.list
-          : Array.isArray(payload?.data?.records)
-          ? payload.data.records
-          : Array.isArray(payload?.data)
-          ? payload.data
-          : Array.isArray(payload?.list)
-          ? payload.list
-          : Array.isArray(payload?.records)
-          ? payload.records
-          : [];
-        const list = listCandidate.length ? listCandidate : rolesData;
-        const total = typeof payload?.data?.total === 'number' ? payload.data.total : typeof payload?.total === 'number' ? payload.total : list.length;
-
-        setRoles(list);
-        setTotalItems(total);
-        setCurrentPage(page);
-      } catch (error) {
-        console.warn('获取角色列表失败：', error);
-        toast({
-          title: '获取角色列表失败',
-          status: 'error',
-          position: 'top',
-          duration: 3000,
-          isClosable: true,
-        });
-        if (page === 1) {
-          setRoles(rolesData);
-          setTotalItems(rolesData.length);
-        }
-      }
-    },
-    [toast]
-  );
-
   useEffect(() => {
-    fetchRoles(1);
-  }, [fetchRoles]);
+    // 首次加载在 usePagedList 中完成，这里仅保留依赖 toast 的副作用占位，避免 ESLint 未使用警告
+  }, [toast]);
 
   const handlePageChange = (nextPage) => {
     if (nextPage < 1 || nextPage > totalPages) return;
-    fetchRoles(nextPage);
+    loadPage(nextPage);
   };
 
   const handleInputChange = (event) => {

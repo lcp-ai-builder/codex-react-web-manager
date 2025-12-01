@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Badge,
   Box,
@@ -37,14 +37,43 @@ import DataTable from '@/components/DataTable.jsx';
 import { operatorsData } from '@/data/operators.js';
 import { rolesData as rolesMock } from '@/data/roles.js';
 import { fetchOperators, createOperator, updateOperator, fetchRoles as fetchRolesApi, updateRoleStatus } from '@/services/api-services.js';
+import usePagedList from '@/hooks/usePagedList.js';
 
 const PAGE_SIZE = 10;
 
 const OperatorsPage = () => {
-  const [operators, setOperators] = useState(operatorsData);
+  const {
+    items: operators,
+    setItems: setOperators,
+    currentPage,
+    setCurrentPage,
+    totalItems,
+    setTotalItems,
+    totalPages,
+    loadPage,
+  } = usePagedList({
+    pageSize: PAGE_SIZE,
+    initialData: operatorsData,
+    fetchPage: ({ page, pageSize, signal }) =>
+      fetchOperators({
+        page,
+        pageSize,
+        signal,
+      }),
+    onError: (error, { page }) => {
+      console.warn('获取操作员列表失败：', error);
+      toast({
+        title: '获取操作员列表失败',
+        status: 'error',
+        position: 'top',
+        duration: 3000,
+        isClosable: true,
+      });
+      // 首次加载失败时 Hook 已使用本地 mock 数据兜底
+      if (page === 1) return;
+    },
+  });
   const [rolesOptions, setRolesOptions] = useState(rolesMock);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalItems, setTotalItems] = useState(operatorsData.length);
   const [formData, setFormData] = useState({
     operatorNo: '',
     name: '',
@@ -68,8 +97,6 @@ const OperatorsPage = () => {
   const { isOpen: isDetailOpen, onOpen: onDetailOpen, onClose: onDetailClose } = useDisclosure();
   const [statusConfirm, setStatusConfirm] = useState({ isOpen: false, operator: null, nextStatus: 'ACTIVE' });
   const [isStatusUpdating, setIsStatusUpdating] = useState(false);
-
-  const totalPages = useMemo(() => Math.max(1, Math.ceil(totalItems / PAGE_SIZE)), [totalItems]);
 
   const mutedText = useColorModeValue('gray.600', 'gray.400');
 
@@ -119,51 +146,9 @@ const OperatorsPage = () => {
     }
   }, [formData.roleId, editFormData.roleId]);
 
-  const fetchList = useCallback(
-    async (page = 1) => {
-      try {
-        const payload = await fetchOperators({ page, pageSize: PAGE_SIZE, signal: undefined });
-        const listCandidate = Array.isArray(payload)
-          ? payload
-          : Array.isArray(payload?.data?.list)
-          ? payload.data.list
-          : Array.isArray(payload?.data?.records)
-          ? payload.data.records
-          : Array.isArray(payload?.data)
-          ? payload.data
-          : Array.isArray(payload?.list)
-          ? payload.list
-          : Array.isArray(payload?.records)
-          ? payload.records
-          : [];
-        const list = listCandidate.length ? listCandidate : operatorsData;
-        const total = typeof payload?.data?.total === 'number' ? payload.data.total : typeof payload?.total === 'number' ? payload.total : list.length;
-
-        setOperators(list);
-        setTotalItems(total);
-        setCurrentPage(page);
-      } catch (error) {
-        console.warn('获取操作员列表失败：', error);
-        toast({
-          title: '获取操作员列表失败',
-          status: 'error',
-          position: 'top',
-          duration: 3000,
-          isClosable: true,
-        });
-        if (page === 1) {
-          setOperators(operatorsData);
-          setTotalItems(operatorsData.length);
-        }
-      }
-    },
-    [toast]
-  );
-
   useEffect(() => {
-    fetchList(1);
     fetchRolesOptions();
-  }, [fetchList, fetchRolesOptions]);
+  }, [fetchRolesOptions]);
 
   useEffect(() => {
     if (!formData.roleId && rolesOptions[0]?.id) {
@@ -176,7 +161,7 @@ const OperatorsPage = () => {
 
   const handlePageChange = (nextPage) => {
     if (nextPage < 1 || nextPage > totalPages) return;
-    fetchList(nextPage);
+    loadPage(nextPage);
   };
 
   const handleInputChange = (event) => {
@@ -627,7 +612,9 @@ const OperatorsPage = () => {
               <Text>所属角色</Text>
               <Text color="inherit">{detailTarget?.roleName || '—'}</Text>
               <Text>状态</Text>
-              <Text color="inherit">{detailTarget?.status === 'active' ? '启用' : '停用'}</Text>
+              <Text color="inherit">
+                {String(detailTarget?.status || '').toUpperCase() === 'ACTIVE' ? '启用' : '停用'}
+              </Text>
               <Text>创建时间</Text>
               <Text color="inherit">{detailTarget?.createdAt || '—'}</Text>
               <Text>最后登录</Text>
