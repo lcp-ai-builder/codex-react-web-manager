@@ -5,7 +5,7 @@ export const rolesData = [
     name: '普通用户',
     code: 'user',
     description: '拥有基础访问与操作权限',
-    status: 'active',
+    isOpen: 1,
     createdAt: '2024-01-10',
   },
   {
@@ -13,7 +13,7 @@ export const rolesData = [
     name: '访客用户',
     code: 'guest',
     description: '仅具备只读访问权限',
-    status: 'inactive',
+    isOpen: 0,
     createdAt: '2024-02-01',
   },
 ];

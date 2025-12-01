@@ -71,6 +71,12 @@ export const updateOperator = async ({ id, data, signal }) =>
     signal,
   });
 
+export const updateOperatorIsOpen = async ({ id, isOpen, signal }) =>
+  request(`/operators/${encodeURIComponent(id)}/is-open?isOpen=${encodeURIComponent(isOpen)}`, {
+    method: 'PUT',
+    signal,
+  });
+
 // 角色
 export const fetchRoles = async ({ page, pageSize, signal }) =>
   request(`/roles?page=${page}&pageSize=${pageSize}`, { signal });
@@ -89,8 +95,8 @@ export const updateRole = async ({ id, data, signal }) =>
     signal,
   });
 
-export const updateRoleStatus = async ({ id, status, signal }) =>
-  request(`/roles/${encodeURIComponent(id)}/status?status=${encodeURIComponent(status)}`, {
+export const updateRoleIsOpen = async ({ id, isOpen, signal }) =>
+  request(`/roles/${encodeURIComponent(id)}/is-open?isOpen=${encodeURIComponent(isOpen)}`, {
     method: 'PUT',
     signal,
   });

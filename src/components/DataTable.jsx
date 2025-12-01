@@ -1,7 +1,20 @@
 import { Box, Flex, Table, TableContainer, Tbody, Td, Th, Thead, Tr, useColorModeValue, Heading, Button } from '@chakra-ui/react';
 import Pagination from './Pagination.jsx';
 
-const DataTable = ({ columns = [], data = [], rowKey = 'id', pagination, containerProps = {}, tableProps = {}, title, headerIcon: HeaderIcon, addText, addIcon: AddIcon, onAdd }) => {
+const DataTable = ({
+  columns = [],
+  data = [],
+  rowKey = 'id',
+  pagination,
+  containerProps = {},
+  tableProps = {},
+  title,
+  headerIcon: HeaderIcon,
+  addText,
+  addIcon: AddIcon,
+  onAdd,
+  getRowProps,
+}) => {
   const tableBg = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
   const zebraBg = useColorModeValue('gray.50', 'gray.700');
@@ -37,15 +50,18 @@ const DataTable = ({ columns = [], data = [], rowKey = 'id', pagination, contain
             </Tr>
           </Thead>
           <Tbody>
-            {data.map((item, index) => (
-              <Tr key={getRowKey(item, index)} bg={index % 2 === 0 ? 'transparent' : zebraBg}>
-                {visibleColumns.map((column) => (
-                  <Td key={`${getRowKey(item, index)}-${column.header}`} textAlign={column.align}>
-                    {column.render ? column.render(item, index) : item?.[column.dataKey] ?? '—'}
-                  </Td>
-                ))}
-              </Tr>
-            ))}
+            {data.map((item, index) => {
+              const rowProps = typeof getRowProps === 'function' ? getRowProps(item, index) : {};
+              return (
+                <Tr key={getRowKey(item, index)} bg={index % 2 === 0 ? 'transparent' : zebraBg} {...rowProps}>
+                  {visibleColumns.map((column) => (
+                    <Td key={`${getRowKey(item, index)}-${column.header}`} textAlign={column.align}>
+                      {column.render ? column.render(item, index) : item?.[column.dataKey] ?? '—'}
+                    </Td>
+                  ))}
+                </Tr>
+              );
+            })}
           </Tbody>
         </Table>
       </TableContainer>

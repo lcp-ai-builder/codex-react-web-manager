@@ -33,7 +33,7 @@ import {
 import { FiEdit2, FiPlus, FiKey } from 'react-icons/fi';
 import DataTable from '@/components/DataTable.jsx';
 import { rolesData } from '@/data/roles.js';
-import { fetchRoles as fetchRolesApi, createRole, updateRole, updateRoleStatus } from '@/services/api-services.js';
+import { fetchRoles as fetchRolesApi, createRole, updateRole, updateRoleIsOpen } from '@/services/api-services.js';
 import usePagedList from '@/hooks/usePagedList.js';
 import { isStatusActive } from '@/utils/status.js';
 
@@ -76,19 +76,19 @@ const RolesPage = () => {
     name: '',
     code: '',
     description: '',
-    status: 'active',
+    isOpen: 1,
   });
   const [editFormData, setEditFormData] = useState({
     id: '',
     name: '',
     code: '',
     description: '',
-    status: 'active',
+    isOpen: 1,
   });
   const [selectedRole, setSelectedRole] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [statusConfirm, setStatusConfirm] = useState({ isOpen: false, role: null, nextStatus: 'active' });
+  const [statusConfirm, setStatusConfirm] = useState({ isOpen: false, role: null, nextIsOpen: 1 });
   const [isStatusUpdating, setIsStatusUpdating] = useState(false);
   const statusCancelRef = useRef();
 
@@ -99,9 +99,11 @@ const RolesPage = () => {
   const toast = useToast();
 
   const statusColorScheme = {
-    active: 'green',
-    inactive: 'gray',
+    open: 'green',
+    closed: 'gray',
   };
+
+  const normalizeIsOpen = (value) => (Number(value) === 1 ? 1 : 0);
 
   // 统一封装列表请求，优先走接口，失败时回落到本地数据
   useEffect(() => {
@@ -115,17 +117,19 @@ const RolesPage = () => {
 
   const handleInputChange = (event) => {
     const { name, value } = event.target;
+    const nextValue = name === 'isOpen' ? Number(value) : value;
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: nextValue,
     }));
   };
 
   const handleEditInputChange = (event) => {
     const { name, value } = event.target;
+    const nextValue = name === 'isOpen' ? Number(value) : value;
     setEditFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: nextValue,
     }));
   };
 
@@ -134,19 +138,20 @@ const RolesPage = () => {
       name: '',
       code: '',
       description: '',
-      status: 'active',
+      isOpen: 1,
     });
     onAddOpen();
   };
 
   const handleSave = async () => {
     if (!formData.name.trim() || !formData.code.trim()) return;
+    const payloadData = { ...formData, isOpen: normalizeIsOpen(formData.isOpen) };
     setIsSaving(true);
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3000);
 
     try {
-      const payload = await createRole({ data: formData, signal: controller.signal });
+      const payload = await createRole({ data: payloadData, signal: controller.signal });
 
       const roleFromApi =
         payload?.data && typeof payload.data === 'object'
@@ -156,11 +161,11 @@ const RolesPage = () => {
           : null;
       const newRole =
         roleFromApi && typeof roleFromApi === 'object'
-          ? { ...formData, ...roleFromApi }
+          ? { ...payloadData, ...roleFromApi }
           : {
               id: `R${String(Date.now()).slice(-5)}`,
               createdAt: new Date().toISOString().slice(0, 10),
-              ...formData,
+              ...payloadData,
             };
       setRoles((prev) => [newRole, ...prev]);
       setTotalItems((prev) => prev + 1);
@@ -195,7 +200,7 @@ const RolesPage = () => {
       name: role.name,
       code: role.code,
       description: role.description || '',
-      status: role.status || 'active',
+      isOpen: typeof role.isOpen === 'number' ? role.isOpen : isStatusActive(role.status) ? 1 : 0,
     });
     onEditOpen();
   };
@@ -208,7 +213,7 @@ const RolesPage = () => {
     try {
       const payload = await updateRole({
         id: editFormData.id,
-        data: editFormData,
+        data: { ...editFormData, isOpen: normalizeIsOpen(editFormData.isOpen) },
         signal: controller.signal,
       });
 
@@ -246,11 +251,12 @@ const RolesPage = () => {
 
   // 删除前先记录目标，弹出确认框避免误删
   const handleToggleStatus = (role) => {
-    const nextStatus = role.status === 'active' ? 'inactive' : 'active';
-    setStatusConfirm({ isOpen: true, role, nextStatus });
+    const active = isStatusActive(role.isOpen ?? role.status);
+    const nextIsOpen = active ? 0 : 1;
+    setStatusConfirm({ isOpen: true, role, nextIsOpen });
   };
 
-  const closeStatusConfirm = () => setStatusConfirm({ isOpen: false, role: null, nextStatus: 'active' });
+  const closeStatusConfirm = () => setStatusConfirm({ isOpen: false, role: null, nextIsOpen: 1 });
 
   const handleConfirmStatus = async () => {
     if (!statusConfirm.role) return;
@@ -258,9 +264,9 @@ const RolesPage = () => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3000);
     try {
-      const payload = await updateRoleStatus({
+      const payload = await updateRoleIsOpen({
         id: statusConfirm.role.id,
-        status: statusConfirm.nextStatus,
+        isOpen: statusConfirm.nextIsOpen,
         signal: controller.signal,
       });
       const returnedRole =
@@ -271,11 +277,11 @@ const RolesPage = () => {
           : null;
       const merged = returnedRole
         ? { ...statusConfirm.role, ...returnedRole }
-        : { ...statusConfirm.role, status: statusConfirm.nextStatus };
+        : { ...statusConfirm.role, isOpen: statusConfirm.nextIsOpen };
 
       setRoles((prev) => prev.map((role) => (role.id === statusConfirm.role.id ? merged : role)));
       toast({
-        title: statusConfirm.nextStatus === 'active' ? '角色已启用' : '角色已停用',
+        title: statusConfirm.nextIsOpen === 1 ? '角色已启用' : '角色已停用',
         status: 'success',
         position: 'top',
         duration: 2500,
@@ -319,9 +325,9 @@ const RolesPage = () => {
       {
         header: '状态',
         render: (role) => {
-          const active = isStatusActive(role.status);
+          const active = isStatusActive(role.isOpen ?? role.status);
           return (
-            <Badge colorScheme={statusColorScheme[active ? 'active' : 'inactive'] || 'gray'}>
+            <Badge colorScheme={statusColorScheme[active ? 'open' : 'closed'] || 'gray'}>
               <Text as="span" color={active ? 'inherit' : 'red.500'}>
                 {active ? '启用' : '停用'}
               </Text>
@@ -334,7 +340,7 @@ const RolesPage = () => {
       {
         header: '启用/停用',
         render: (role) => {
-          const active = isStatusActive(role.status);
+          const active = isStatusActive(role.isOpen ?? role.status);
           return (
             <HStack spacing={2}>
               <Switch isChecked={active} onChange={() => handleToggleStatus(role)} isDisabled={isStatusUpdating} colorScheme="teal" size="sm" />
@@ -365,6 +371,10 @@ const RolesPage = () => {
         data={roles}
         rowKey={(item) => item.id}
         pagination={{ currentPage, totalPages, onPageChange: handlePageChange, isLoading: loading }}
+        getRowProps={(role) => {
+          const active = isStatusActive(role.isOpen ?? role.status);
+          return active ? {} : { color: mutedText, opacity: 0.75 };
+        }}
         title="角色管理"
         headerIcon={FiKey}
         addText="新建角色"
@@ -391,10 +401,10 @@ const RolesPage = () => {
               <Input name="description" placeholder="可填写角色说明" value={formData.description} onChange={handleInputChange} />
             </FormControl>
             <FormControl>
-              <FormLabel>状态</FormLabel>
-              <Select name="status" value={formData.status} onChange={handleInputChange}>
-                <option value="active">启用</option>
-                <option value="inactive">停用</option>
+              <FormLabel>是否开启</FormLabel>
+              <Select name="isOpen" value={formData.isOpen} onChange={handleInputChange}>
+                <option value={1}>启用</option>
+                <option value={0}>停用</option>
               </Select>
             </FormControl>
           </ModalBody>
@@ -428,10 +438,10 @@ const RolesPage = () => {
               <Input name="description" value={editFormData.description} onChange={handleEditInputChange} />
             </FormControl>
             <FormControl>
-              <FormLabel>状态</FormLabel>
-              <Select name="status" value={editFormData.status} onChange={handleEditInputChange}>
-                <option value="active">启用</option>
-                <option value="inactive">停用</option>
+              <FormLabel>是否开启</FormLabel>
+              <Select name="isOpen" value={editFormData.isOpen} onChange={handleEditInputChange}>
+                <option value={1}>启用</option>
+                <option value={0}>停用</option>
               </Select>
             </FormControl>
           </ModalBody>
@@ -450,11 +460,11 @@ const RolesPage = () => {
         <AlertDialogOverlay>
           <AlertDialogContent>
             <AlertDialogHeader fontSize="lg" fontWeight="bold">
-              确认{statusConfirm.nextStatus === 'active' ? '启用' : '停用'}
+              确认{statusConfirm.nextIsOpen === 1 ? '启用' : '停用'}
             </AlertDialogHeader>
             <AlertDialogBody>
               是否将角色「{statusConfirm.role?.name}」设置为
-              {statusConfirm.nextStatus === 'active' ? '启用' : '停用'}状态？
+              {statusConfirm.nextIsOpen === 1 ? '启用' : '停用'}状态？
             </AlertDialogBody>
             <AlertDialogFooter>
               <Button ref={statusCancelRef} onClick={closeStatusConfirm}>

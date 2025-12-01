@@ -3,7 +3,6 @@ import { Avatar, Box, Button, Collapse, Flex, Heading, Icon, IconButton, List, L
 import {
   FiHome,
   FiUsers,
-  FiSettings,
   FiLogOut,
   FiMoon,
   FiSun,
@@ -58,7 +57,6 @@ const HomePage = () => {
           { icon: FiStar, label: 'VIP用户' },
         ],
       },
-      { icon: FiSettings, label: '系统设置' },
     ],
     []
   );

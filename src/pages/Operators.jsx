@@ -36,7 +36,7 @@ import { FiEdit2, FiPlus, FiSearch, FiUserCheck } from 'react-icons/fi';
 import DataTable from '@/components/DataTable.jsx';
 import { operatorsData } from '@/data/operators.js';
 import { rolesData as rolesMock } from '@/data/roles.js';
-import { fetchOperators, createOperator, updateOperator, fetchRoles as fetchRolesApi, updateRoleStatus } from '@/services/api-services.js';
+import { fetchOperators, createOperator, updateOperator, fetchRoles as fetchRolesApi, updateOperatorIsOpen } from '@/services/api-services.js';
 import usePagedList from '@/hooks/usePagedList.js';
 import { isStatusActive } from '@/utils/status.js';
 
@@ -82,6 +82,7 @@ const OperatorsPage = () => {
     loginName: '',
     phone: '',
     roleId: rolesOptions[0]?.id || '',
+    isOpen: 1,
   });
   const [editFormData, setEditFormData] = useState({
     id: '',
@@ -91,13 +92,13 @@ const OperatorsPage = () => {
     phone: '',
     email: '',
     roleId: rolesOptions[0]?.id || '',
-    status: 'ACTIVE',
+    isOpen: 1,
   });
   const [isSaving, setIsSaving] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [detailTarget, setDetailTarget] = useState(null);
   const { isOpen: isDetailOpen, onOpen: onDetailOpen, onClose: onDetailClose } = useDisclosure();
-  const [statusConfirm, setStatusConfirm] = useState({ isOpen: false, operator: null, nextStatus: 'ACTIVE' });
+  const [statusConfirm, setStatusConfirm] = useState({ isOpen: false, operator: null, nextIsOpen: 1 });
   const [isStatusUpdating, setIsStatusUpdating] = useState(false);
 
   const mutedText = useColorModeValue('gray.600', 'gray.400');
@@ -107,11 +108,11 @@ const OperatorsPage = () => {
   const toast = useToast();
 
   const statusColorScheme = {
-    ACTIVE: 'green',
-    INACTIVE: 'gray',
-    active: 'green',
-    inactive: 'gray',
+    open: 'green',
+    closed: 'gray',
   };
+
+  const normalizeIsOpen = (value) => (Number(value) === 1 ? 1 : 0);
 
   // 角色选项：优先拉取后端，失败回落到 mock
   const fetchRolesOptions = useCallback(async () => {
@@ -168,17 +169,19 @@ const OperatorsPage = () => {
 
   const handleInputChange = (event) => {
     const { name, value } = event.target;
+    const nextValue = name === 'isOpen' ? Number(value) : value;
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: nextValue,
     }));
   };
 
   const handleEditInputChange = (event) => {
     const { name, value } = event.target;
+    const nextValue = name === 'isOpen' ? Number(value) : value;
     setEditFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: nextValue,
     }));
   };
 
@@ -191,7 +194,7 @@ const OperatorsPage = () => {
       phone: '',
       email: '',
       roleId: rolesOptions[0]?.id || '',
-      status: 'ACTIVE',
+      isOpen: 1,
     });
     onAddOpen();
   };
@@ -227,6 +230,7 @@ const OperatorsPage = () => {
           phone: formData.phone,
           roleId: Number(formData.roleId) || formData.roleId,
           ...(formData.email ? { email: formData.email } : {}),
+          isOpen: normalizeIsOpen(formData.isOpen),
         },
         signal: controller.signal,
       });
@@ -242,7 +246,7 @@ const OperatorsPage = () => {
               createdAt: new Date().toISOString().slice(0, 10),
               lastLoginAt: '-',
               ...formData,
-              status: (formData.status || 'ACTIVE').toUpperCase(),
+              isOpen: normalizeIsOpen(formData.isOpen),
               roleName: roleInfo?.name,
               loginPassword: undefined,
             };
@@ -280,7 +284,7 @@ const OperatorsPage = () => {
       phone: operator.phone || '',
       email: operator.email || '',
       roleId: operator.roleId || operator.role_id || rolesOptions.find((r) => r.name === operator.roleName)?.id || rolesOptions[0]?.id || '',
-      status: operator.status || 'ACTIVE',
+      isOpen: typeof operator.isOpen === 'number' ? operator.isOpen : isStatusActive(operator.status) ? 1 : 0,
     });
     onEditOpen();
   };
@@ -291,12 +295,12 @@ const OperatorsPage = () => {
   };
 
   const handleToggleStatus = (operator) => {
-    const active = isStatusActive(operator.status ?? 'ACTIVE');
-    const nextStatus = active ? 'INACTIVE' : 'ACTIVE';
-    setStatusConfirm({ isOpen: true, operator, nextStatus });
+    const active = isStatusActive(operator.isOpen ?? operator.status ?? 1);
+    const nextIsOpen = active ? 0 : 1;
+    setStatusConfirm({ isOpen: true, operator, nextIsOpen });
   };
 
-  const closeStatusConfirm = () => setStatusConfirm({ isOpen: false, operator: null, nextStatus: 'ACTIVE' });
+  const closeStatusConfirm = () => setStatusConfirm({ isOpen: false, operator: null, nextIsOpen: 1 });
 
   const handleConfirmStatus = async () => {
     if (!statusConfirm.operator) return;
@@ -304,20 +308,20 @@ const OperatorsPage = () => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3000);
     try {
-      const payload = await updateRoleStatus({
+      const payload = await updateOperatorIsOpen({
         id: statusConfirm.operator.id,
-        status: statusConfirm.nextStatus,
+        isOpen: statusConfirm.nextIsOpen,
         signal: controller.signal,
       });
       const returned = payload?.data && typeof payload.data === 'object' ? payload.data : payload && typeof payload === 'object' ? payload : null;
       const merged =
         returned && typeof returned === 'object'
           ? { ...statusConfirm.operator, ...returned }
-          : { ...statusConfirm.operator, status: statusConfirm.nextStatus };
+          : { ...statusConfirm.operator, isOpen: statusConfirm.nextIsOpen };
 
       setOperators((prev) => prev.map((op) => (op.id === statusConfirm.operator.id ? merged : op)));
       toast({
-        title: statusConfirm.nextStatus === 'ACTIVE' ? '操作员已启用' : '操作员已停用',
+        title: statusConfirm.nextIsOpen === 1 ? '操作员已启用' : '操作员已停用',
         status: 'success',
         position: 'top',
         duration: 2500,
@@ -370,9 +374,9 @@ const OperatorsPage = () => {
       {
         header: '状态',
         render: (operator) => {
-          const active = isStatusActive(operator.status);
+          const active = isStatusActive(operator.isOpen ?? operator.status);
           return (
-            <Badge colorScheme={statusColorScheme[active ? 'ACTIVE' : 'INACTIVE'] || 'gray'}>
+            <Badge colorScheme={statusColorScheme[active ? 'open' : 'closed'] || 'gray'}>
               <Text as="span" color={active ? 'inherit' : 'red.500'}>
                 {active ? '启用' : '停用'}
               </Text>
@@ -393,7 +397,7 @@ const OperatorsPage = () => {
       {
         header: '启用/停用',
         render: (operator) => {
-          const active = isStatusActive(operator.status);
+          const active = isStatusActive(operator.isOpen ?? operator.status);
           return (
             <HStack spacing={2}>
               <Switch
@@ -443,6 +447,7 @@ const OperatorsPage = () => {
           phone: editFormData.phone,
           email: editFormData.email || undefined,
           roleId: Number(editFormData.roleId) || editFormData.roleId,
+          isOpen: normalizeIsOpen(editFormData.isOpen),
         },
         signal: controller.signal,
       });
@@ -482,6 +487,10 @@ const OperatorsPage = () => {
         data={operators}
         rowKey={(item) => item.id || item.code}
         pagination={{ currentPage, totalPages, onPageChange: handlePageChange, isLoading: loading }}
+        getRowProps={(operator) => {
+          const active = isStatusActive(operator.isOpen ?? operator.status);
+          return active ? {} : { color: mutedText, opacity: 0.75 };
+        }}
         title="操作员管理"
         headerIcon={FiUserCheck}
         addText="新建操作员"
@@ -582,9 +591,9 @@ const OperatorsPage = () => {
               </FormControl>
               <FormControl>
                 <FormLabel>状态</FormLabel>
-                <Select name="status" value={editFormData.status} onChange={handleEditInputChange}>
-                  <option value="active">启用</option>
-                  <option value="inactive">停用</option>
+                <Select name="isOpen" value={editFormData.isOpen} onChange={handleEditInputChange}>
+                  <option value={1}>启用</option>
+                  <option value={0}>停用</option>
                 </Select>
               </FormControl>
             </SimpleGrid>
@@ -622,7 +631,7 @@ const OperatorsPage = () => {
               <Text color="inherit">{detailTarget?.roleName || '—'}</Text>
               <Text>状态</Text>
               <Text color="inherit">
-                {isStatusActive(detailTarget?.status) ? '启用' : '停用'}
+                {isStatusActive(detailTarget?.isOpen ?? detailTarget?.status) ? '启用' : '停用'}
               </Text>
               <Text>创建时间</Text>
               <Text color="inherit">{detailTarget?.createdAt || '—'}</Text>
@@ -640,11 +649,11 @@ const OperatorsPage = () => {
         <AlertDialogOverlay />
         <AlertDialogContent>
           <AlertDialogHeader fontSize="lg" fontWeight="bold">
-            确认{statusConfirm.nextStatus === 'ACTIVE' ? '启用' : '停用'}
+            确认{statusConfirm.nextIsOpen === 1 ? '启用' : '停用'}
           </AlertDialogHeader>
           <AlertDialogBody>
             是否将操作员「{statusConfirm.operator?.name || statusConfirm.operator?.loginName}」设置为
-            {statusConfirm.nextStatus === 'ACTIVE' ? '启用' : '停用'}状态？
+            {statusConfirm.nextIsOpen === 1 ? '启用' : '停用'}状态？
           </AlertDialogBody>
           <AlertDialogFooter>
             <Button onClick={closeStatusConfirm}>取消</Button>
