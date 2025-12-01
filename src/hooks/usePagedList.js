@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 // 通用的列表响应解析：优先从常见字段中抽取 list 和 total，失败时回落到本地数据
 export const parseListResponse = (payload, fallbackList = []) => {
@@ -46,6 +46,21 @@ const usePagedList = ({ pageSize = 10, initialData = [], fetchPage, onError }) =
   const [currentPage, setCurrentPage] = useState(1);
   const [totalItems, setTotalItems] = useState(initialData.length);
   const [loading, setLoading] = useState(false);
+  const fetchPageRef = useRef(fetchPage);
+  const onErrorRef = useRef(onError);
+  const itemsRef = useRef(initialData);
+
+  useEffect(() => {
+    fetchPageRef.current = fetchPage;
+  }, [fetchPage]);
+
+  useEffect(() => {
+    onErrorRef.current = onError;
+  }, [onError]);
+
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
 
   const totalPages = useMemo(
     () => Math.max(1, Math.ceil(totalItems / pageSize)),
@@ -59,18 +74,18 @@ const usePagedList = ({ pageSize = 10, initialData = [], fetchPage, onError }) =
       const timeoutId = timeout ? setTimeout(() => controller.abort(), timeout) : null;
 
       try {
-        const payload = await fetchPage({ page, pageSize, signal: controller.signal });
+        const payload = await fetchPageRef.current({ page, pageSize, signal: controller.signal });
         const { list, total } = parseListResponse(payload, initialData);
         setItems(list);
         setTotalItems(total);
         setCurrentPage(page);
         return { list, total };
       } catch (error) {
-        if (onError) {
-          onError(error, { page });
+        if (onErrorRef.current) {
+          onErrorRef.current(error, { page });
         }
         // 首次加载第一页失败时，自动退回到本地 mock 数据
-        if (page === 1 && !items.length && initialData.length) {
+        if (page === 1 && !itemsRef.current.length && initialData.length) {
           setItems(initialData);
           setTotalItems(initialData.length);
           setCurrentPage(1);
@@ -81,7 +96,7 @@ const usePagedList = ({ pageSize = 10, initialData = [], fetchPage, onError }) =
         setLoading(false);
       }
     },
-    [fetchPage, pageSize, initialData, onError, items.length]
+    [pageSize, initialData]
   );
 
   // 初次挂载时自动拉取第一页

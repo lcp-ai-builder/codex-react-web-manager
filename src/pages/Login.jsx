@@ -8,8 +8,9 @@ import useAuthStore from '@/store/useAuthStore.js';
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const [userId, setUserId] = useState('');
-  const [password, setPassword] = useState('');
+  const isDev = import.meta.env.MODE === 'development';
+  const [userId, setUserId] = useState(isDev ? 'admin' : '');
+  const [password, setPassword] = useState(isDev ? 'aaaaaa' : '');
   const [loading, setLoading] = useState(false);
   const { colorMode, toggleColorMode } = useColorMode();
   const toast = useToast();
