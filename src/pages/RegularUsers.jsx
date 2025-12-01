@@ -7,6 +7,7 @@ import Pagination from '@/components/Pagination.jsx';
 import { regularUsersData } from '@/data/regularUsers.js';
 import { fetchUsers as fetchUsersApi, addUser, updateUser, deleteUser } from '@/services/api-services.js';
 import usePagedList from '@/hooks/usePagedList.js';
+import { isStatusActive } from '@/utils/status.js';
 
 const PAGE_SIZE = 10; // 统一设置分页大小，方便后续联动
 
@@ -20,6 +21,7 @@ const RegularUsersPage = () => {
     totalItems,
     setTotalItems,
     totalPages,
+    loading,
     loadPage,
   } = usePagedList({
     pageSize: PAGE_SIZE,
@@ -133,10 +135,10 @@ const RegularUsersPage = () => {
 
   // 根据状态展示不同颜色的 Badge
   const renderStatus = (status) => {
-    const isActive = status === 'active';
+    const active = isStatusActive(status);
     return (
-      <Badge colorScheme={isActive ? 'teal' : 'orange'} variant="subtle">
-        {isActive ? '启用' : '停用'}
+      <Badge colorScheme={active ? 'teal' : 'orange'} variant="subtle">
+        {active ? '启用' : '停用'}
       </Badge>
     );
   };
@@ -211,7 +213,15 @@ const RegularUsersPage = () => {
           </Table>
         </TableContainer>
         <Flex align="center" justify="space-between" px={6} py={4} borderTop="1px solid" borderColor={borderColor} flexWrap="wrap" gap={4}>
-          <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} totalItems={totalItems} pageSize={PAGE_SIZE} colorScheme="teal" />
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+            totalItems={totalItems}
+            pageSize={PAGE_SIZE}
+            colorScheme="teal"
+            isLoading={loading}
+          />
         </Flex>
       </Box>
       {/* 新增用户弹窗：三项基础信息 */}

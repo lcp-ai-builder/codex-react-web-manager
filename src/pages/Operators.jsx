@@ -38,6 +38,7 @@ import { operatorsData } from '@/data/operators.js';
 import { rolesData as rolesMock } from '@/data/roles.js';
 import { fetchOperators, createOperator, updateOperator, fetchRoles as fetchRolesApi, updateRoleStatus } from '@/services/api-services.js';
 import usePagedList from '@/hooks/usePagedList.js';
+import { isStatusActive } from '@/utils/status.js';
 
 const PAGE_SIZE = 10;
 
@@ -50,6 +51,7 @@ const OperatorsPage = () => {
     totalItems,
     setTotalItems,
     totalPages,
+    loading,
     loadPage,
   } = usePagedList({
     pageSize: PAGE_SIZE,
@@ -289,7 +291,8 @@ const OperatorsPage = () => {
   };
 
   const handleToggleStatus = (operator) => {
-    const nextStatus = String(operator.status || 'ACTIVE').toUpperCase() === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+    const active = isStatusActive(operator.status ?? 'ACTIVE');
+    const nextStatus = active ? 'INACTIVE' : 'ACTIVE';
     setStatusConfirm({ isOpen: true, operator, nextStatus });
   };
 
@@ -366,13 +369,16 @@ const OperatorsPage = () => {
       },
       {
         header: '状态',
-        render: (operator) => (
-          <Badge colorScheme={statusColorScheme[operator.status] || 'gray'}>
-            <Text as="span" color={String(operator.status).toUpperCase() === 'INACTIVE' ? 'red.500' : 'inherit'}>
-              {String(operator.status).toUpperCase() === 'ACTIVE' ? '启用' : '停用'}
-            </Text>
-          </Badge>
-        ),
+        render: (operator) => {
+          const active = isStatusActive(operator.status);
+          return (
+            <Badge colorScheme={statusColorScheme[active ? 'ACTIVE' : 'INACTIVE'] || 'gray'}>
+              <Text as="span" color={active ? 'inherit' : 'red.500'}>
+                {active ? '启用' : '停用'}
+              </Text>
+            </Badge>
+          );
+        },
         visible: false,
       },
       {
@@ -386,20 +392,23 @@ const OperatorsPage = () => {
       },
       {
         header: '启用/停用',
-        render: (operator) => (
-          <HStack spacing={2}>
-            <Switch
-              isChecked={String(operator.status).toUpperCase() === 'ACTIVE'}
-              onChange={() => handleToggleStatus(operator)}
-              isDisabled={isStatusUpdating}
-              colorScheme="teal"
-              size="sm"
-            />
-            <Text fontSize="sm" color={mutedText}>
-              {String(operator.status).toUpperCase() === 'ACTIVE' ? '启用' : '停用'}
-            </Text>
-          </HStack>
-        ),
+        render: (operator) => {
+          const active = isStatusActive(operator.status);
+          return (
+            <HStack spacing={2}>
+              <Switch
+                isChecked={active}
+                onChange={() => handleToggleStatus(operator)}
+                isDisabled={isStatusUpdating}
+                colorScheme="teal"
+                size="sm"
+              />
+              <Text fontSize="sm" color={mutedText}>
+                {active ? '启用' : '停用'}
+              </Text>
+            </HStack>
+          );
+        },
       },
       {
         header: '操作',
@@ -472,7 +481,7 @@ const OperatorsPage = () => {
         columns={columns}
         data={operators}
         rowKey={(item) => item.id || item.code}
-        pagination={{ currentPage, totalPages, onPageChange: handlePageChange }}
+        pagination={{ currentPage, totalPages, onPageChange: handlePageChange, isLoading: loading }}
         title="操作员管理"
         headerIcon={FiUserCheck}
         addText="新建操作员"
@@ -613,7 +622,7 @@ const OperatorsPage = () => {
               <Text color="inherit">{detailTarget?.roleName || '—'}</Text>
               <Text>状态</Text>
               <Text color="inherit">
-                {String(detailTarget?.status || '').toUpperCase() === 'ACTIVE' ? '启用' : '停用'}
+                {isStatusActive(detailTarget?.status) ? '启用' : '停用'}
               </Text>
               <Text>创建时间</Text>
               <Text color="inherit">{detailTarget?.createdAt || '—'}</Text>

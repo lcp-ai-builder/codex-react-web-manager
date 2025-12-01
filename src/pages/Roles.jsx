@@ -35,6 +35,7 @@ import DataTable from '@/components/DataTable.jsx';
 import { rolesData } from '@/data/roles.js';
 import { fetchRoles as fetchRolesApi, createRole, updateRole, updateRoleStatus } from '@/services/api-services.js';
 import usePagedList from '@/hooks/usePagedList.js';
+import { isStatusActive } from '@/utils/status.js';
 
 const PAGE_SIZE = 10;
 
@@ -48,6 +49,7 @@ const RolesPage = () => {
     totalItems,
     setTotalItems,
     totalPages,
+    loading,
     loadPage,
   } = usePagedList({
     pageSize: PAGE_SIZE,
@@ -316,26 +318,32 @@ const RolesPage = () => {
       },
       {
         header: '状态',
-        render: (role) => (
-          <Badge colorScheme={statusColorScheme[role.status] || 'gray'}>
-            <Text as="span" color={role.status === 'inactive' ? 'red.500' : 'inherit'}>
-              {role.status === 'active' ? '启用' : '停用'}
-            </Text>
-          </Badge>
-        ),
+        render: (role) => {
+          const active = isStatusActive(role.status);
+          return (
+            <Badge colorScheme={statusColorScheme[active ? 'active' : 'inactive'] || 'gray'}>
+              <Text as="span" color={active ? 'inherit' : 'red.500'}>
+                {active ? '启用' : '停用'}
+              </Text>
+            </Badge>
+          );
+        },
         visible: false,
       },
       { header: '创建时间', render: (role) => role.createdAt || '—' },
       {
         header: '启用/停用',
-        render: (role) => (
-          <HStack spacing={2}>
-            <Switch isChecked={role.status === 'active'} onChange={() => handleToggleStatus(role)} isDisabled={isStatusUpdating} colorScheme="teal" size="sm" />
-            <Text fontSize="sm" color={mutedText}>
-              {role.status === 'active' ? '启用' : '停用'}
-            </Text>
-          </HStack>
-        ),
+        render: (role) => {
+          const active = isStatusActive(role.status);
+          return (
+            <HStack spacing={2}>
+              <Switch isChecked={active} onChange={() => handleToggleStatus(role)} isDisabled={isStatusUpdating} colorScheme="teal" size="sm" />
+              <Text fontSize="sm" color={mutedText}>
+                {active ? '启用' : '停用'}
+              </Text>
+            </HStack>
+          );
+        },
       },
       {
         header: '操作',
@@ -356,7 +364,7 @@ const RolesPage = () => {
         columns={columns}
         data={roles}
         rowKey={(item) => item.id}
-        pagination={{ currentPage, totalPages, onPageChange: handlePageChange }}
+        pagination={{ currentPage, totalPages, onPageChange: handlePageChange, isLoading: loading }}
         title="角色管理"
         headerIcon={FiKey}
         addText="新建角色"

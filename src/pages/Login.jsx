@@ -8,8 +8,8 @@ import useAuthStore from '@/store/useAuthStore.js';
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const [userId, setUserId] = useState('admin');
-  const [password, setPassword] = useState('aaaaaa');
+  const [userId, setUserId] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const { colorMode, toggleColorMode } = useColorMode();
   const toast = useToast();
@@ -18,6 +18,8 @@ const LoginPage = () => {
   const cardShadow = useColorModeValue('lg', 'dark-lg');
   const subTextColor = useColorModeValue('gray.500', 'gray.400');
   const setAuth = useAuthStore((state) => state.setAuth);
+
+  const isFormValid = userId.trim().length > 0 && password.trim().length > 0;
 
   const handleLogin = async (event) => {
     event.preventDefault();
@@ -34,8 +36,9 @@ const LoginPage = () => {
         });
         navigate('/home');
       } else {
+        const message = data?.message || '登录失败，请重试';
         toast({
-          title: '登录失败，请重试',
+          title: message,
           status: 'error',
           duration: 3000,
           isClosable: true,
@@ -44,8 +47,12 @@ const LoginPage = () => {
       }
     } catch (err) {
       console.error('登录请求失败：', err);
+      const message =
+        err?.payload?.message ||
+        err?.payload?.error ||
+        (typeof err?.message === 'string' ? err.message : '登录请求失败，请稍后重试');
       toast({
-        title: '登录请求失败，请稍后重试',
+        title: message,
         status: 'error',
         duration: 3000,
         isClosable: true,
@@ -78,7 +85,7 @@ const LoginPage = () => {
           <FormLabel>密码</FormLabel>
           <Input type="password" placeholder="请输入密码" value={password} onChange={(e) => setPassword(e.target.value)} required />
         </FormControl>
-        <Button type="submit" colorScheme="teal" w="full" size="lg" isLoading={loading}>
+        <Button type="submit" colorScheme="teal" w="full" size="lg" isLoading={loading} isDisabled={!isFormValid || loading}>
           登录
         </Button>
       </Box>
