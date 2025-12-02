@@ -47,7 +47,7 @@ const HomePage = () => {
   const headerBg = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
   const textMuted = useColorModeValue('gray.600', 'gray.400');
-  const menuHover = useColorModeValue({ bg: 'teal.50', color: 'teal.500' }, { bg: 'teal.900', color: 'teal.200' });
+  const menuHover = useColorModeValue({ bg: 'teal.100', color: 'teal.700' }, { bg: 'teal.800', color: 'teal.100' });
   const handleLogout = () => {
     clearAuth();
     navigate('/login');
@@ -118,12 +118,21 @@ const HomePage = () => {
 
   const currentPath = location.pathname.length > 1 && location.pathname.endsWith('/') ? location.pathname.slice(0, -1) : location.pathname;
   const currentLabel = menuPathLabelMap[currentPath] ?? '仪表盘';
+  const isActivePath = (path) => path && currentPath.startsWith(path);
 
   return (
     <Flex h="100vh" bg={pageBg} overflow="hidden">
       <Box
         as="nav"
-        w={isCollapsed ? '88px' : { base: '260px', md: '300px' }}
+        w={
+          isCollapsed
+            ? '76px'
+            : {
+                base: 'clamp(160px, 44vw, 200px)',
+                md: 'clamp(180px, 24vw, 220px)',
+                lg: 'clamp(200px, 18vw, 240px)',
+              }
+        }
         bg={sidebarBg}
         borderRight="1px solid"
         borderColor={borderColor}
@@ -167,21 +176,21 @@ const HomePage = () => {
 
             return (
               <Box key={item.label}>
-                <ListItem
-                  display="flex"
-                  alignItems="center"
-                  justifyContent={isCollapsed ? 'center' : 'flex-start'}
-                  gap={isCollapsed ? 0 : 3}
-                  px={isCollapsed ? 2 : 3}
-                  py={2}
-                  borderRadius="md"
-                  cursor="pointer"
-                  _hover={menuHover}
-                  onClick={() => {
-                    if (item.path) {
-                      navigate(item.path);
-                      return;
-                    }
+              <ListItem
+                display="flex"
+                alignItems="center"
+                justifyContent={isCollapsed ? 'center' : 'flex-start'}
+                gap={isCollapsed ? 0 : 3}
+                px={isCollapsed ? 2 : 3}
+                py={2}
+                borderRadius="md"
+                cursor="pointer"
+                _hover={menuHover}
+                onClick={() => {
+                  if (item.path) {
+                    navigate(item.path);
+                    return;
+                  }
                     handleToggle();
                   }}
                 >
@@ -205,6 +214,8 @@ const HomePage = () => {
                           borderRadius="md"
                           cursor="pointer"
                           _hover={menuHover}
+                          bg={isActivePath(child.path) ? menuHover.bg : 'transparent'}
+                          color={isActivePath(child.path) ? menuHover.color : 'inherit'}
                           onClick={() => child.path && navigate(child.path)}
                         >
                           <Icon as={child.icon} boxSize={4} color={getAccent(index + childIndex + 1)} />

@@ -47,10 +47,7 @@ const LoginPage = () => {
       }
     } catch (err) {
       console.error('登录请求失败：', err);
-      const message =
-        err?.payload?.message ||
-        err?.payload?.error ||
-        (typeof err?.message === 'string' ? err.message : '登录请求失败，请稍后重试');
+      const message = err?.payload?.message || err?.payload?.error || (typeof err?.message === 'string' ? err.message : '登录请求失败，请稍后重试');
       toast({
         title: message,
         status: 'error',

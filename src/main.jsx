@@ -24,15 +24,13 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <Routes>
           <Route
             path="/"
-            element={
-              (() => {
-                const { token, currentUser } = useAuthStore.getState();
-                if (token && currentUser) {
-                  return <Navigate to="/home" replace />;
-                }
-                return <Navigate to="/login" replace />;
-              })()
-            }
+            element={(() => {
+              const { token, currentUser } = useAuthStore.getState();
+              if (token && currentUser) {
+                return <Navigate to="/home" replace />;
+              }
+              return <Navigate to="/login" replace />;
+            })()}
           />
           <Route path="/*" element={<App />} />
         </Routes>

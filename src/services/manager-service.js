@@ -4,7 +4,8 @@ import useAuthStore from '@/store/useAuthStore.js';
 // 统一的请求封装：返回 JSON，异常由调用方处理
 const request = async (path, options = {}) => {
   const { token } = useAuthStore.getState();
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const url = `${API_BASE_URL}${path}`;
+  const response = await fetch(url, {
     headers: {
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -29,8 +30,7 @@ export const login = async ({ userId, password }) =>
   });
 
 // 用户列表
-export const fetchUsers = async ({ page, pageSize, signal }) =>
-  request(`/getAll?page=${page}&pageSize=${pageSize}`, { signal });
+export const fetchUsers = async ({ page, pageSize, signal }) => request(`/getAll?page=${page}&pageSize=${pageSize}`, { signal });
 
 export const addUser = async ({ data, signal }) =>
   request('/addNewUser', {
@@ -54,8 +54,7 @@ export const deleteUser = async ({ id, signal }) =>
   });
 
 // 操作员
-export const fetchOperators = async ({ page, pageSize, signal }) =>
-  request(`/operators?page=${page}&pageSize=${pageSize}`, { signal });
+export const fetchOperators = async ({ page, pageSize, signal }) => request(`/operators?page=${page}&pageSize=${pageSize}`, { signal });
 
 export const createOperator = async ({ data, signal }) =>
   request('/operators', {
@@ -78,8 +77,7 @@ export const updateOperatorIsOpen = async ({ id, isOpen, signal }) =>
   });
 
 // 角色
-export const fetchRoles = async ({ page, pageSize, signal }) =>
-  request(`/roles?page=${page}&pageSize=${pageSize}`, { signal });
+export const fetchRoles = async ({ page, pageSize, signal }) => request(`/roles?page=${page}&pageSize=${pageSize}`, { signal });
 
 export const createRole = async ({ data, signal }) =>
   request('/roles', {

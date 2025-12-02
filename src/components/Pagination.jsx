@@ -3,17 +3,7 @@ import { buildPageNumbers, clampPage } from '@/utils/pagination.js';
 
 const MAX_VISIBLE_PAGES = 10;
 
-const Pagination = ({
-  currentPage,
-  totalPages,
-  onPageChange,
-  totalItems,
-  pageSize,
-  size = 'sm',
-  colorScheme = 'teal',
-  showSummary = true,
-  isLoading = false,
-}) => {
+const Pagination = ({ currentPage, totalPages, onPageChange, totalItems, pageSize, size = 'sm', colorScheme = 'teal', showSummary = true, isLoading = false }) => {
   const summaryColor = useColorModeValue('gray.600', 'gray.400');
 
   const pageNumbers = buildPageNumbers(currentPage, totalPages, MAX_VISIBLE_PAGES);

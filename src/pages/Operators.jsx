@@ -265,8 +265,7 @@ const OperatorsPage = () => {
         loginName: operator.loginName || '',
         phone: operator.phone || '',
         email: operator.email || '',
-        roleId:
-          operator.roleId || operator.role_id || rolesOptions.find((r) => r.name === operator.roleName)?.id || rolesOptions[0]?.id || '',
+        roleId: operator.roleId || operator.role_id || rolesOptions.find((r) => r.name === operator.roleName)?.id || rolesOptions[0]?.id || '',
       });
       onEditOpen();
     },
@@ -301,10 +300,7 @@ const OperatorsPage = () => {
         signal: controller.signal,
       });
       const returned = payload?.data && typeof payload.data === 'object' ? payload.data : payload && typeof payload === 'object' ? payload : null;
-      const merged =
-        returned && typeof returned === 'object'
-          ? { ...statusConfirm.operator, ...returned }
-          : { ...statusConfirm.operator, isOpen: statusConfirm.nextIsOpen };
+      const merged = returned && typeof returned === 'object' ? { ...statusConfirm.operator, ...returned } : { ...statusConfirm.operator, isOpen: statusConfirm.nextIsOpen };
 
       setOperators((prev) => prev.map((op) => (op.id === statusConfirm.operator.id ? merged : op)));
       toast({
@@ -387,13 +383,7 @@ const OperatorsPage = () => {
           const active = isOpenEnabled(operator.isOpen ?? operator.status);
           return (
             <HStack spacing={2}>
-              <Switch
-                isChecked={active}
-                onChange={() => handleToggleStatus(operator)}
-                isDisabled={isStatusUpdating}
-                colorScheme="teal"
-                size="sm"
-              />
+              <Switch isChecked={active} onChange={() => handleToggleStatus(operator)} isDisabled={isStatusUpdating} colorScheme="teal" size="sm" />
               <Text fontSize="sm" color={mutedText}>
                 {active ? '启用' : '停用'}
               </Text>
@@ -575,8 +565,8 @@ const OperatorsPage = () => {
                   ))}
                 </Select>
               </FormControl>
-          </SimpleGrid>
-        </ModalBody>
+            </SimpleGrid>
+          </ModalBody>
           <ModalFooter>
             <Button mr={3} onClick={onEditClose}>
               取消
@@ -609,9 +599,7 @@ const OperatorsPage = () => {
               <Text>所属角色</Text>
               <Text color="inherit">{detailTarget?.roleName || '—'}</Text>
               <Text>状态</Text>
-              <Text color="inherit">
-                {isOpenEnabled(detailTarget?.isOpen ?? detailTarget?.status) ? '启用' : '停用'}
-              </Text>
+              <Text color="inherit">{isOpenEnabled(detailTarget?.isOpen ?? detailTarget?.status) ? '启用' : '停用'}</Text>
               <Text>创建时间</Text>
               <Text color="inherit">{detailTarget?.createdAt || '—'}</Text>
               <Text>最后登录</Text>

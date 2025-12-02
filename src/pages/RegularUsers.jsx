@@ -217,15 +217,7 @@ const RegularUsersPage = () => {
           </Table>
         </TableContainer>
         <Flex align="center" justify="space-between" px={6} py={4} borderTop="1px solid" borderColor={borderColor} flexWrap="wrap" gap={4}>
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
-            totalItems={totalItems}
-            pageSize={PAGE_SIZE}
-            colorScheme="teal"
-            isLoading={loading}
-          />
+          <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} totalItems={totalItems} pageSize={PAGE_SIZE} colorScheme="teal" isLoading={loading} />
         </Flex>
       </Box>
       {/* 新增用户弹窗：三项基础信息 */}
