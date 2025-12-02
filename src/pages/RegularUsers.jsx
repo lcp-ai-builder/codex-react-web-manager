@@ -4,7 +4,7 @@ import { AlertDialog, AlertDialogBody, AlertDialogContent, AlertDialogFooter, Al
 // prettier-ignore
 import { FiEdit2, FiTrash2 } from 'react-icons/fi';
 import Pagination from '@/components/Pagination.jsx';
-import { fetchUsers as fetchUsersApi, addUser, updateUser, deleteUser } from '@/services/api-services.js';
+import { fetchUsers as fetchUsersApi, addUser, updateUser, deleteUser } from '@/services/manager-service.js';
 import usePagedList from '@/hooks/usePagedList.js';
 import { isOpenEnabled } from '@/utils/status.js';
 

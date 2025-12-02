@@ -24,10 +24,10 @@ export default defineConfig({
     //   clientPort: 5173
     // },
     proxy: {
-      '/api': {
+      '/manager': {
         target: 'http://192.168.127.128:8080',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
+        rewrite: (path) => path.replace(/^\/manager/, ''),
       },
     },
   },

@@ -1,4 +1,4 @@
-import { API_BASE_URL } from '@/config/api.js';
+import { API_BASE_URL } from '@/config/manager.js';
 import useAuthStore from '@/store/useAuthStore.js';
 
 // 统一的请求封装：返回 JSON，异常由调用方处理

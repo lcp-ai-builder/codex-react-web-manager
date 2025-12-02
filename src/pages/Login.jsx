@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Box, Button, Flex, FormControl, FormLabel, Heading, IconButton, Input, useColorMode, useColorModeValue, useToast } from '@chakra-ui/react';
 import { MoonIcon, SunIcon } from '@chakra-ui/icons';
 import { useNavigate } from 'react-router-dom';
-import { login } from '@/services/api-services.js';
+import { login } from '@/services/manager-service.js';
 import { hashPassword } from '@/components/hash-password';
 import useAuthStore from '@/store/useAuthStore.js';
 

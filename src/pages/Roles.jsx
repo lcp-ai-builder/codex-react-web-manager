@@ -30,7 +30,7 @@ import {
 } from '@chakra-ui/react';
 import { FiEdit2, FiPlus, FiKey } from 'react-icons/fi';
 import DataTable from '@/components/DataTable.jsx';
-import { fetchRoles as fetchRolesApi, createRole, updateRole, updateRoleIsOpen } from '@/services/api-services.js';
+import { fetchRoles as fetchRolesApi, createRole, updateRole, updateRoleIsOpen } from '@/services/manager-service.js';
 import usePagedList from '@/hooks/usePagedList.js';
 import { isOpenEnabled } from '@/utils/status.js';
 

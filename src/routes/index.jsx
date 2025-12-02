@@ -7,6 +7,7 @@ import RegularUsersPage from '@/pages/RegularUsers.jsx';
 import MaintenancePage from '@/pages/MaintenancePage.jsx';
 import RolesPage from '@/pages/Roles.jsx';
 import OperatorsPage from '@/pages/Operators.jsx';
+import OrderDetailsPage from '@/pages/OrderDetails.jsx';
 
 const AppRoutes = () => (
   <Routes>
@@ -22,7 +23,7 @@ const AppRoutes = () => (
       <Route path="system/logs" element={<MaintenancePage title="操作日志" />} />
       <Route path="system/password" element={<MaintenancePage title="修改密码" />} />
       <Route path="orders/overview" element={<MaintenancePage title="订单概览" />} />
-      <Route path="orders/details" element={<MaintenancePage title="订单详细查询" />} />
+      <Route path="orders/details" element={<OrderDetailsPage />} />
     </Route>
     {/* 未匹配路径兜底重定向到登录页 */}
     <Route path="*" element={<Navigate to="/" replace />} />
