@@ -86,7 +86,6 @@ const OperatorsPage = () => {
     phone: '',
     email: '',
     roleId: rolesOptions[0]?.id || '',
-    isOpen: 1,
   });
   const [isSaving, setIsSaving] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -162,10 +161,9 @@ const OperatorsPage = () => {
 
   const handleEditInputChange = (event) => {
     const { name, value } = event.target;
-    const nextValue = name === 'isOpen' ? Number(value) : value;
     setEditFormData((prev) => ({
       ...prev,
-      [name]: nextValue,
+      [name]: value,
     }));
   };
 
@@ -268,7 +266,6 @@ const OperatorsPage = () => {
       phone: operator.phone || '',
       email: operator.email || '',
       roleId: operator.roleId || operator.role_id || rolesOptions.find((r) => r.name === operator.roleName)?.id || rolesOptions[0]?.id || '',
-      isOpen: typeof operator.isOpen === 'number' ? operator.isOpen : isOpenEnabled(operator.status) ? 1 : 0,
     });
     onEditOpen();
   };
@@ -431,7 +428,6 @@ const OperatorsPage = () => {
           phone: editFormData.phone,
           email: editFormData.email || undefined,
           roleId: Number(editFormData.roleId) || editFormData.roleId,
-          isOpen: normalizeIsOpen(editFormData.isOpen),
         },
         signal: controller.signal,
       });
@@ -573,15 +569,8 @@ const OperatorsPage = () => {
                   ))}
                 </Select>
               </FormControl>
-              <FormControl>
-                <FormLabel>状态</FormLabel>
-                <Select name="isOpen" value={editFormData.isOpen} onChange={handleEditInputChange}>
-                  <option value={1}>启用</option>
-                  <option value={0}>停用</option>
-                </Select>
-              </FormControl>
-            </SimpleGrid>
-          </ModalBody>
+          </SimpleGrid>
+        </ModalBody>
           <ModalFooter>
             <Button mr={3} onClick={onEditClose}>
               取消

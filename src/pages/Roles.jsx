@@ -79,7 +79,6 @@ const RolesPage = () => {
     name: '',
     code: '',
     description: '',
-    isOpen: 1,
   });
   const [selectedRole, setSelectedRole] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -117,10 +116,9 @@ const RolesPage = () => {
 
   const handleEditInputChange = (event) => {
     const { name, value } = event.target;
-    const nextValue = name === 'isOpen' ? Number(value) : value;
     setEditFormData((prev) => ({
       ...prev,
-      [name]: nextValue,
+      [name]: value,
     }));
   };
 
@@ -406,13 +404,6 @@ const RolesPage = () => {
             <FormControl mb={4}>
               <FormLabel>描述</FormLabel>
               <Input name="description" value={editFormData.description} onChange={handleEditInputChange} />
-            </FormControl>
-            <FormControl>
-              <FormLabel>是否开启</FormLabel>
-              <Select name="isOpen" value={editFormData.isOpen} onChange={handleEditInputChange}>
-                <option value={1}>启用</option>
-                <option value={0}>停用</option>
-              </Select>
             </FormControl>
           </ModalBody>
           <ModalFooter>
