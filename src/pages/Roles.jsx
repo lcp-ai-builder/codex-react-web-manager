@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   Badge,
   Box,
@@ -35,7 +35,7 @@ import DataTable from '@/components/DataTable.jsx';
 import { rolesData } from '@/data/roles.js';
 import { fetchRoles as fetchRolesApi, createRole, updateRole, updateRoleIsOpen } from '@/services/api-services.js';
 import usePagedList from '@/hooks/usePagedList.js';
-import { isStatusActive } from '@/utils/status.js';
+import { isOpenEnabled } from '@/utils/status.js';
 
 const PAGE_SIZE = 10;
 
@@ -44,10 +44,8 @@ const RolesPage = () => {
   const {
     items: roles,
     setItems: setRoles,
-    currentPage,
-    setCurrentPage,
-    totalItems,
     setTotalItems,
+    currentPage,
     totalPages,
     loading,
     loadPage,
@@ -104,11 +102,6 @@ const RolesPage = () => {
   };
 
   const normalizeIsOpen = (value) => (Number(value) === 1 ? 1 : 0);
-
-  // 统一封装列表请求，优先走接口，失败时回落到本地数据
-  useEffect(() => {
-    // 首次加载在 usePagedList 中完成，这里仅保留依赖 toast 的副作用占位，避免 ESLint 未使用警告
-  }, [toast]);
 
   const handlePageChange = (nextPage) => {
     if (nextPage < 1 || nextPage > totalPages) return;
@@ -200,7 +193,7 @@ const RolesPage = () => {
       name: role.name,
       code: role.code,
       description: role.description || '',
-      isOpen: typeof role.isOpen === 'number' ? role.isOpen : isStatusActive(role.status) ? 1 : 0,
+      isOpen: typeof role.isOpen === 'number' ? role.isOpen : isOpenEnabled(role.status) ? 1 : 0,
     });
     onEditOpen();
   };
@@ -251,7 +244,7 @@ const RolesPage = () => {
 
   // 删除前先记录目标，弹出确认框避免误删
   const handleToggleStatus = (role) => {
-    const active = isStatusActive(role.isOpen ?? role.status);
+    const active = isOpenEnabled(role.isOpen ?? role.status);
     const nextIsOpen = active ? 0 : 1;
     setStatusConfirm({ isOpen: true, role, nextIsOpen });
   };
@@ -325,7 +318,7 @@ const RolesPage = () => {
       {
         header: '状态',
         render: (role) => {
-          const active = isStatusActive(role.isOpen ?? role.status);
+          const active = isOpenEnabled(role.isOpen ?? role.status);
           return (
             <Badge colorScheme={statusColorScheme[active ? 'open' : 'closed'] || 'gray'}>
               <Text as="span" color={active ? 'inherit' : 'red.500'}>
@@ -340,7 +333,7 @@ const RolesPage = () => {
       {
         header: '启用/停用',
         render: (role) => {
-          const active = isStatusActive(role.isOpen ?? role.status);
+          const active = isOpenEnabled(role.isOpen ?? role.status);
           return (
             <HStack spacing={2}>
               <Switch isChecked={active} onChange={() => handleToggleStatus(role)} isDisabled={isStatusUpdating} colorScheme="teal" size="sm" />
@@ -372,7 +365,7 @@ const RolesPage = () => {
         rowKey={(item) => item.id}
         pagination={{ currentPage, totalPages, onPageChange: handlePageChange, isLoading: loading }}
         getRowProps={(role) => {
-          const active = isStatusActive(role.isOpen ?? role.status);
+          const active = isOpenEnabled(role.isOpen ?? role.status);
           return active ? {} : { color: mutedText, opacity: 0.75 };
         }}
         title="角色管理"

@@ -7,7 +7,7 @@ import Pagination from '@/components/Pagination.jsx';
 import { regularUsersData } from '@/data/regularUsers.js';
 import { fetchUsers as fetchUsersApi, addUser, updateUser, deleteUser } from '@/services/api-services.js';
 import usePagedList from '@/hooks/usePagedList.js';
-import { isStatusActive } from '@/utils/status.js';
+import { isOpenEnabled } from '@/utils/status.js';
 
 const PAGE_SIZE = 10; // 统一设置分页大小，方便后续联动
 
@@ -119,6 +119,7 @@ const RegularUsersPage = () => {
         },
         ...prev,
       ]);
+      setTotalItems((prev) => prev + 1);
       onSuccessOpen();
     } catch {
       toast({
@@ -135,7 +136,7 @@ const RegularUsersPage = () => {
 
   // 根据状态展示不同颜色的 Badge
   const renderStatus = (status) => {
-    const active = isStatusActive(status);
+    const active = isOpenEnabled(status);
     return (
       <Badge colorScheme={active ? 'teal' : 'orange'} variant="subtle">
         {active ? '启用' : '停用'}
@@ -411,14 +412,15 @@ const RegularUsersPage = () => {
                       id: deleteTarget.id,
                       signal: controller.signal,
                     });
-                    setUsers((prev) => {
-                      const updated = prev.filter((user) => user.id !== deleteTarget.id);
+                    setUsers((prev) => prev.filter((user) => user.id !== deleteTarget.id));
+                    setTotalItems((prevTotal) => {
+                      const nextTotal = Math.max(0, prevTotal - 1);
                       // 删除后若总页数减少，回退到最后一页，避免空白页
-                      const newTotalPages = Math.max(1, Math.ceil(updated.length / PAGE_SIZE));
-                      if (currentPage > newTotalPages) {
-                        setCurrentPage(newTotalPages);
+                      const nextTotalPages = Math.max(1, Math.ceil(nextTotal / PAGE_SIZE));
+                      if (currentPage > nextTotalPages) {
+                        setCurrentPage(nextTotalPages);
                       }
-                      return updated;
+                      return nextTotal;
                     });
                     toast({
                       title: '用户已删除',

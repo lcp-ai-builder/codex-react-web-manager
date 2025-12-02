@@ -1,14 +1,12 @@
-// 统一处理各种形式的状态值，例如 "active" / "ACTIVE" / 1 / "1" / true
-export const getStatusFlag = (value) => {
+// 统一处理启用状态值，例如 isOpen: 1/0、"true"/"false"、"active"/"inactive"
+export const getIsOpenFlag = (value) => {
   if (value === null || value === undefined) return 'unknown';
   const normalized = String(value).trim().toLowerCase();
 
-  if (['active', 'enabled', '1', 'true', 'y', 'yes'].includes(normalized)) return 'active';
-  if (['inactive', 'disabled', '0', 'false', 'n', 'no'].includes(normalized)) return 'inactive';
+  if (['active', 'enabled', 'open', '1', 'true', 'y', 'yes'].includes(normalized)) return 'open';
+  if (['inactive', 'disabled', 'closed', '0', 'false', 'n', 'no'].includes(normalized)) return 'closed';
 
   return 'unknown';
 };
 
-export const isStatusActive = (value) => getStatusFlag(value) === 'active';
-
-export const isStatusInactive = (value) => getStatusFlag(value) === 'inactive';
+export const isOpenEnabled = (value) => getIsOpenFlag(value) === 'open';

@@ -38,7 +38,7 @@ import { operatorsData } from '@/data/operators.js';
 import { rolesData as rolesMock } from '@/data/roles.js';
 import { fetchOperators, createOperator, updateOperator, fetchRoles as fetchRolesApi, updateOperatorIsOpen } from '@/services/api-services.js';
 import usePagedList from '@/hooks/usePagedList.js';
-import { isStatusActive } from '@/utils/status.js';
+import { isOpenEnabled } from '@/utils/status.js';
 
 const PAGE_SIZE = 10;
 
@@ -47,8 +47,6 @@ const OperatorsPage = () => {
     items: operators,
     setItems: setOperators,
     currentPage,
-    setCurrentPage,
-    totalItems,
     setTotalItems,
     totalPages,
     loading,
@@ -284,7 +282,7 @@ const OperatorsPage = () => {
       phone: operator.phone || '',
       email: operator.email || '',
       roleId: operator.roleId || operator.role_id || rolesOptions.find((r) => r.name === operator.roleName)?.id || rolesOptions[0]?.id || '',
-      isOpen: typeof operator.isOpen === 'number' ? operator.isOpen : isStatusActive(operator.status) ? 1 : 0,
+      isOpen: typeof operator.isOpen === 'number' ? operator.isOpen : isOpenEnabled(operator.status) ? 1 : 0,
     });
     onEditOpen();
   };
@@ -295,7 +293,7 @@ const OperatorsPage = () => {
   };
 
   const handleToggleStatus = (operator) => {
-    const active = isStatusActive(operator.isOpen ?? operator.status ?? 1);
+    const active = isOpenEnabled(operator.isOpen ?? operator.status ?? 1);
     const nextIsOpen = active ? 0 : 1;
     setStatusConfirm({ isOpen: true, operator, nextIsOpen });
   };
@@ -374,7 +372,7 @@ const OperatorsPage = () => {
       {
         header: '状态',
         render: (operator) => {
-          const active = isStatusActive(operator.isOpen ?? operator.status);
+          const active = isOpenEnabled(operator.isOpen ?? operator.status);
           return (
             <Badge colorScheme={statusColorScheme[active ? 'open' : 'closed'] || 'gray'}>
               <Text as="span" color={active ? 'inherit' : 'red.500'}>
@@ -397,7 +395,7 @@ const OperatorsPage = () => {
       {
         header: '启用/停用',
         render: (operator) => {
-          const active = isStatusActive(operator.isOpen ?? operator.status);
+          const active = isOpenEnabled(operator.isOpen ?? operator.status);
           return (
             <HStack spacing={2}>
               <Switch
@@ -488,7 +486,7 @@ const OperatorsPage = () => {
         rowKey={(item) => item.id || item.code}
         pagination={{ currentPage, totalPages, onPageChange: handlePageChange, isLoading: loading }}
         getRowProps={(operator) => {
-          const active = isStatusActive(operator.isOpen ?? operator.status);
+          const active = isOpenEnabled(operator.isOpen ?? operator.status);
           return active ? {} : { color: mutedText, opacity: 0.75 };
         }}
         title="操作员管理"
@@ -631,7 +629,7 @@ const OperatorsPage = () => {
               <Text color="inherit">{detailTarget?.roleName || '—'}</Text>
               <Text>状态</Text>
               <Text color="inherit">
-                {isStatusActive(detailTarget?.isOpen ?? detailTarget?.status) ? '启用' : '停用'}
+                {isOpenEnabled(detailTarget?.isOpen ?? detailTarget?.status) ? '启用' : '停用'}
               </Text>
               <Text>创建时间</Text>
               <Text color="inherit">{detailTarget?.createdAt || '—'}</Text>
