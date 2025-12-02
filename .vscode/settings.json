@@ -1,4 +1,6 @@
 {
+  "editor.wordWrap": "wordWrapColumn",
+  "editor.wordWrapColumn": 200,
   "cSpell.enabled": false,
   "editor.fontFamily": "'Google Sans Code','Monaspace Neon',Monaco,'JetBrains Mono','WenQuanYi Micro Hei Mono','Microsoft YaHei','Fira Code', Consolas, 'Courier New', monospace",
   "eslint.enable": true,
