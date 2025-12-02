@@ -108,7 +108,7 @@ const OperatorsPage = () => {
 
   const normalizeIsOpen = (value) => (Number(value) === 1 ? 1 : 0);
 
-  // 角色选项：优先拉取后端，失败回落到 mock
+  // 角色选项：优先拉取后端
   const fetchRolesOptions = useCallback(async () => {
     try {
       const payload = await fetchRolesApi({ page: 1, pageSize: 100 });
@@ -130,31 +130,21 @@ const OperatorsPage = () => {
         id: typeof role.id === 'number' ? role.id : Number(role.id) || idx + 1,
       }));
       setRolesOptions(list);
-      // 同步表单默认角色
-      if (!formData.roleId && list[0]?.id) {
-        setFormData((prev) => ({ ...prev, roleId: list[0].id }));
-      }
-      if (!editFormData.roleId && list[0]?.id) {
-        setEditFormData((prev) => ({ ...prev, roleId: list[0].id }));
-      }
     } catch (error) {
       console.warn('获取角色选项失败：', error);
       setRolesOptions([]);
     }
-  }, [formData.roleId, editFormData.roleId]);
+  }, []);
 
   useEffect(() => {
     fetchRolesOptions();
   }, [fetchRolesOptions]);
 
   useEffect(() => {
-    if (!formData.roleId && rolesOptions[0]?.id) {
-      setFormData((prev) => ({ ...prev, roleId: rolesOptions[0].id }));
-    }
-    if (!editFormData.roleId && rolesOptions[0]?.id) {
-      setEditFormData((prev) => ({ ...prev, roleId: rolesOptions[0].id }));
-    }
-  }, [editFormData.roleId, formData.roleId, rolesOptions]);
+    if (!rolesOptions[0]?.id) return;
+    setFormData((prev) => (prev.roleId ? prev : { ...prev, roleId: rolesOptions[0].id }));
+    setEditFormData((prev) => (prev.roleId ? prev : { ...prev, roleId: rolesOptions[0].id }));
+  }, [rolesOptions]);
 
   const handlePageChange = (nextPage) => {
     if (nextPage < 1 || nextPage > totalPages) return;
@@ -480,7 +470,7 @@ const OperatorsPage = () => {
         columns={columns}
         data={operators}
         rowKey={(item) => item.id || item.code}
-        pagination={{ currentPage, totalPages, onPageChange: handlePageChange, isLoading: loading }}
+        pagination={{ currentPage, totalPages, onPageChange: handlePageChange }}
         getRowProps={(operator) => {
           const active = isOpenEnabled(operator.isOpen ?? operator.status);
           return active ? {} : { color: mutedText, opacity: 0.75 };

@@ -3,7 +3,7 @@ import { buildPageNumbers, clampPage } from '@/utils/pagination.js';
 
 const MAX_VISIBLE_PAGES = 10;
 
-const Pagination = ({ currentPage, totalPages, onPageChange, totalItems, pageSize, size = 'sm', colorScheme = 'teal', showSummary = true, isLoading = false }) => {
+const Pagination = ({ currentPage, totalPages, onPageChange, totalItems, pageSize, size = 'sm', colorScheme = 'teal', showSummary = true }) => {
   const summaryColor = useColorModeValue('gray.600', 'gray.400');
 
   const pageNumbers = buildPageNumbers(currentPage, totalPages, MAX_VISIBLE_PAGES);
@@ -26,22 +26,17 @@ const Pagination = ({ currentPage, totalPages, onPageChange, totalItems, pageSiz
       )}
       {/* 上一页 / 下一页 */}
       <ButtonGroup size={size} variant="outline" colorScheme={colorScheme}>
-        <Button onClick={() => handlePageChange(currentPage - 1)} isDisabled={currentPage === 1 || isLoading}>
+        <Button onClick={() => handlePageChange(currentPage - 1)} isDisabled={currentPage === 1}>
           上一页
         </Button>
-        <Button onClick={() => handlePageChange(currentPage + 1)} isDisabled={currentPage === totalPages || isLoading}>
+        <Button onClick={() => handlePageChange(currentPage + 1)} isDisabled={currentPage === totalPages}>
           下一页
         </Button>
       </ButtonGroup>
       {/* 数字页码，点击可直接跳转 */}
       <ButtonGroup size={size} variant="outline" colorScheme={colorScheme}>
         {pageNumbers.map((page) => (
-          <Button
-            key={page}
-            variant={page === currentPage ? 'solid' : 'outline'}
-            onClick={() => handlePageChange(page)}
-            isDisabled={isLoading}
-          >
+          <Button key={page} variant={page === currentPage ? 'solid' : 'outline'} onClick={() => handlePageChange(page)}>
             {page}
           </Button>
         ))}

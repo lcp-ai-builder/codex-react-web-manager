@@ -50,6 +50,7 @@ const usePagedList = ({ pageSize = 10, initialData = [], fetchPage, onError }) =
   const fetchPageRef = useRef(fetchPage);
   const onErrorRef = useRef(onError);
   const itemsRef = useRef(initialData);
+  const initialDataRef = useRef(initialData);
 
   useEffect(() => {
     fetchPageRef.current = fetchPage;
@@ -63,6 +64,10 @@ const usePagedList = ({ pageSize = 10, initialData = [], fetchPage, onError }) =
     itemsRef.current = items;
   }, [items]);
 
+  useEffect(() => {
+    initialDataRef.current = initialData;
+  }, [initialData]);
+
   const totalPages = useMemo(() => getTotalPages(totalItems, pageSize), [totalItems, pageSize]);
 
   const loadPage = useCallback(
@@ -73,7 +78,7 @@ const usePagedList = ({ pageSize = 10, initialData = [], fetchPage, onError }) =
 
       try {
         const payload = await fetchPageRef.current({ page, pageSize, signal: controller.signal });
-        const { list, total } = parseListResponse(payload, initialData);
+        const { list, total } = parseListResponse(payload, initialDataRef.current);
         setItems(list);
         setTotalItems(total);
         setCurrentPage(page);
@@ -82,10 +87,10 @@ const usePagedList = ({ pageSize = 10, initialData = [], fetchPage, onError }) =
         if (onErrorRef.current) {
           onErrorRef.current(error, { page });
         }
-        // 首次加载第一页失败时，自动退回到本地 mock 数据
-        if (page === 1 && !itemsRef.current.length && initialData.length) {
-          setItems(initialData);
-          setTotalItems(initialData.length);
+        // 首次加载第一页失败时，自动退回到本地数据
+        if (page === 1 && !itemsRef.current.length && initialDataRef.current.length) {
+          setItems(initialDataRef.current);
+          setTotalItems(initialDataRef.current.length);
           setCurrentPage(1);
         }
         throw error;
@@ -94,7 +99,7 @@ const usePagedList = ({ pageSize = 10, initialData = [], fetchPage, onError }) =
         setLoading(false);
       }
     },
-    [pageSize, initialData]
+    [pageSize]
   );
 
   // 初次挂载时自动拉取第一页
