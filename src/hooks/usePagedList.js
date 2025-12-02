@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { getTotalPages } from '@/utils/pagination.js';
 
 // 通用的列表响应解析：优先从常见字段中抽取 list 和 total，失败时回落到本地数据
 export const parseListResponse = (payload, fallbackList = []) => {
@@ -62,10 +63,7 @@ const usePagedList = ({ pageSize = 10, initialData = [], fetchPage, onError }) =
     itemsRef.current = items;
   }, [items]);
 
-  const totalPages = useMemo(
-    () => Math.max(1, Math.ceil(totalItems / pageSize)),
-    [totalItems, pageSize]
-  );
+  const totalPages = useMemo(() => getTotalPages(totalItems, pageSize), [totalItems, pageSize]);
 
   const loadPage = useCallback(
     async (page = 1, { timeout = DEFAULT_TIMEOUT } = {}) => {

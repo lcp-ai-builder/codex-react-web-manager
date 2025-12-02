@@ -6,7 +6,6 @@ import {
   Flex,
   FormControl,
   FormLabel,
-  Heading,
   HStack,
   IconButton,
   Input,
@@ -32,7 +31,6 @@ import {
 } from '@chakra-ui/react';
 import { FiEdit2, FiPlus, FiKey } from 'react-icons/fi';
 import DataTable from '@/components/DataTable.jsx';
-import { rolesData } from '@/data/roles.js';
 import { fetchRoles as fetchRolesApi, createRole, updateRole, updateRoleIsOpen } from '@/services/api-services.js';
 import usePagedList from '@/hooks/usePagedList.js';
 import { isOpenEnabled } from '@/utils/status.js';
@@ -40,7 +38,7 @@ import { isOpenEnabled } from '@/utils/status.js';
 const PAGE_SIZE = 10;
 
 const RolesPage = () => {
-  // 角色数据与分页状态，默认读取本地 mock
+  // 角色数据与分页状态，数据来源后端
   const {
     items: roles,
     setItems: setRoles,
@@ -51,7 +49,7 @@ const RolesPage = () => {
     loadPage,
   } = usePagedList({
     pageSize: PAGE_SIZE,
-    initialData: rolesData,
+    initialData: [],
     fetchPage: ({ page, pageSize, signal }) =>
       fetchRolesApi({
         page,
@@ -146,12 +144,7 @@ const RolesPage = () => {
     try {
       const payload = await createRole({ data: payloadData, signal: controller.signal });
 
-      const roleFromApi =
-        payload?.data && typeof payload.data === 'object'
-          ? payload.data
-          : payload && typeof payload === 'object'
-          ? payload
-          : null;
+      const roleFromApi = payload?.data && typeof payload.data === 'object' ? payload.data : payload && typeof payload === 'object' ? payload : null;
       const newRole =
         roleFromApi && typeof roleFromApi === 'object'
           ? { ...payloadData, ...roleFromApi }
@@ -210,12 +203,7 @@ const RolesPage = () => {
         signal: controller.signal,
       });
 
-      const updatedRole =
-        payload?.data && typeof payload.data === 'object'
-          ? payload.data
-          : payload && typeof payload === 'object'
-          ? payload
-          : null;
+      const updatedRole = payload?.data && typeof payload.data === 'object' ? payload.data : payload && typeof payload === 'object' ? payload : null;
       const mergedRole = updatedRole ? { ...editFormData, ...updatedRole } : editFormData;
 
       setRoles((prev) => prev.map((role) => (role.id === editFormData.id ? { ...role, ...mergedRole } : role)));
@@ -262,15 +250,8 @@ const RolesPage = () => {
         isOpen: statusConfirm.nextIsOpen,
         signal: controller.signal,
       });
-      const returnedRole =
-        payload?.data && typeof payload.data === 'object'
-          ? payload.data
-          : payload && typeof payload === 'object'
-          ? payload
-          : null;
-      const merged = returnedRole
-        ? { ...statusConfirm.role, ...returnedRole }
-        : { ...statusConfirm.role, isOpen: statusConfirm.nextIsOpen };
+      const returnedRole = payload?.data && typeof payload.data === 'object' ? payload.data : payload && typeof payload === 'object' ? payload : null;
+      const merged = returnedRole ? { ...statusConfirm.role, ...returnedRole } : { ...statusConfirm.role, isOpen: statusConfirm.nextIsOpen };
 
       setRoles((prev) => prev.map((role) => (role.id === statusConfirm.role.id ? merged : role)));
       toast({
@@ -300,11 +281,7 @@ const RolesPage = () => {
     () => [
       {
         header: '角色名',
-        render: (role) => (
-          <Text fontWeight="medium">
-            {role.name}
-          </Text>
-        ),
+        render: (role) => <Text fontWeight="medium">{role.name}</Text>,
       },
       { header: '角色标识', render: (role) => role.code },
       {

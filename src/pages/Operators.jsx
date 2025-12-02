@@ -7,7 +7,6 @@ import {
   HStack,
   FormControl,
   FormLabel,
-  Heading,
   Input,
   Modal,
   ModalBody,
@@ -34,8 +33,6 @@ import {
 } from '@chakra-ui/react';
 import { FiEdit2, FiPlus, FiSearch, FiUserCheck } from 'react-icons/fi';
 import DataTable from '@/components/DataTable.jsx';
-import { operatorsData } from '@/data/operators.js';
-import { rolesData as rolesMock } from '@/data/roles.js';
 import { fetchOperators, createOperator, updateOperator, fetchRoles as fetchRolesApi, updateOperatorIsOpen } from '@/services/api-services.js';
 import usePagedList from '@/hooks/usePagedList.js';
 import { isOpenEnabled } from '@/utils/status.js';
@@ -53,7 +50,7 @@ const OperatorsPage = () => {
     loadPage,
   } = usePagedList({
     pageSize: PAGE_SIZE,
-    initialData: operatorsData,
+    initialData: [],
     fetchPage: ({ page, pageSize, signal }) =>
       fetchOperators({
         page,
@@ -69,11 +66,10 @@ const OperatorsPage = () => {
         duration: 3000,
         isClosable: true,
       });
-      // 首次加载失败时 Hook 已使用本地 mock 数据兜底
       if (page === 1) return;
     },
   });
-  const [rolesOptions, setRolesOptions] = useState(rolesMock);
+  const [rolesOptions, setRolesOptions] = useState([]);
   const [formData, setFormData] = useState({
     operatorNo: '',
     name: '',
@@ -129,7 +125,7 @@ const OperatorsPage = () => {
         : Array.isArray(payload?.records)
         ? payload.records
         : [];
-      const list = (listCandidate.length ? listCandidate : rolesMock).map((role, idx) => ({
+      const list = (listCandidate.length ? listCandidate : []).map((role, idx) => ({
         ...role,
         id: typeof role.id === 'number' ? role.id : Number(role.id) || idx + 1,
       }));
@@ -143,7 +139,7 @@ const OperatorsPage = () => {
       }
     } catch (error) {
       console.warn('获取角色选项失败：', error);
-      setRolesOptions(rolesMock);
+      setRolesOptions([]);
     }
   }, [formData.roleId, editFormData.roleId]);
 
@@ -158,7 +154,7 @@ const OperatorsPage = () => {
     if (!editFormData.roleId && rolesOptions[0]?.id) {
       setEditFormData((prev) => ({ ...prev, roleId: rolesOptions[0].id }));
     }
-  }, [rolesOptions]); 
+  }, [editFormData.roleId, formData.roleId, rolesOptions]);
 
   const handlePageChange = (nextPage) => {
     if (nextPage < 1 || nextPage > totalPages) return;

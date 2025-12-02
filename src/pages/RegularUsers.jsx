@@ -1,10 +1,9 @@
 import { useRef, useState } from 'react';
 // prettier-ignore
-import { AlertDialog, AlertDialogBody, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogOverlay, Badge, Box, Button, Flex, FormControl, FormLabel, Heading, Input, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, Select, Table, TableContainer, Tbody, Td, Text, Th, Thead, Tr, useColorModeValue, useDisclosure, useToast, IconButton, HStack } from '@chakra-ui/react';
+import { AlertDialog, AlertDialogBody, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogOverlay, Badge, Box, Button, Flex, FormControl, FormLabel, Input, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, Select, Table, TableContainer, Tbody, Td, Text, Th, Thead, Tr, useColorModeValue, useDisclosure, useToast, IconButton, HStack } from '@chakra-ui/react';
 // prettier-ignore
 import { FiEdit2, FiTrash2 } from 'react-icons/fi';
 import Pagination from '@/components/Pagination.jsx';
-import { regularUsersData } from '@/data/regularUsers.js';
 import { fetchUsers as fetchUsersApi, addUser, updateUser, deleteUser } from '@/services/api-services.js';
 import usePagedList from '@/hooks/usePagedList.js';
 import { isOpenEnabled } from '@/utils/status.js';
@@ -12,7 +11,7 @@ import { isOpenEnabled } from '@/utils/status.js';
 const PAGE_SIZE = 10; // 统一设置分页大小，方便后续联动
 
 const RegularUsersPage = () => {
-  // 通过通用分页 Hook 管理列表和分页信息，接口不可用时自动回退到本地 mock 数据
+  // 通过通用分页 Hook 管理列表和分页信息，数据来源后端
   const {
     items: users,
     setItems: setUsers,
@@ -25,7 +24,7 @@ const RegularUsersPage = () => {
     loadPage,
   } = usePagedList({
     pageSize: PAGE_SIZE,
-    initialData: regularUsersData,
+    initialData: [],
     fetchPage: ({ page, pageSize, signal }) =>
       fetchUsersApi({
         page,
@@ -74,7 +73,6 @@ const RegularUsersPage = () => {
 
   const tableBg = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
-  const mutedText = useColorModeValue('gray.600', 'gray.400');
 
   // 切换分页时访问正式接口
   const handlePageChange = (nextPage) => {
@@ -146,9 +144,6 @@ const RegularUsersPage = () => {
 
   return (
     <Box p={{ base: 4, md: 8 }}>
-      {/* <Heading size="lg" mb={6}>
-        普通用户
-      </Heading> */}
       <Box bg={tableBg} borderRadius="lg" border="1px solid" borderColor={borderColor} boxShadow="sm">
         {/* 表格头部：仅放一个“添加”按钮 */}
         <Flex px={6} py={4} borderBottom="1px solid" borderColor={borderColor} align="center" justify="flex-start">
@@ -169,47 +164,55 @@ const RegularUsersPage = () => {
               </Tr>
             </Thead>
             <Tbody>
-              {users.map((user) => (
-                <Tr key={user.id}>
-                  <Td>{user.id}</Td>
-                  <Td>{user.name}</Td>
-                  <Td>{user.email}</Td>
-                  <Td>{renderStatus(user.status)}</Td>
-                  <Td isNumeric>{user.joinedAt}</Td>
-                  <Td>
-                    <HStack justify="center" spacing={2}>
-                      <IconButton
-                        aria-label="编辑"
-                        icon={<FiEdit2 />}
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => {
-                          // 进入编辑模式前缓存当前行数据
-                          setSelectedUser(user);
-                          setEditFormData({
-                            name: user.name,
-                            email: user.email,
-                            status: user.status,
-                          });
-                          onEditOpen();
-                        }}
-                      />
-                      <IconButton
-                        aria-label="删除"
-                        icon={<FiTrash2 />}
-                        size="sm"
-                        variant="ghost"
-                        colorScheme="red"
-                        onClick={() => {
-                          // 删除也需要记录目标，稍后在确认框中使用
-                          setDeleteTarget(user);
-                          onDeleteOpen();
-                        }}
-                      />
-                    </HStack>
+              {users.length === 0 ? (
+                <Tr>
+                  <Td colSpan={6} textAlign="center">
+                    暂无数据
                   </Td>
                 </Tr>
-              ))}
+              ) : (
+                users.map((user) => (
+                  <Tr key={user.id}>
+                    <Td>{user.id}</Td>
+                    <Td>{user.name}</Td>
+                    <Td>{user.email}</Td>
+                    <Td>{renderStatus(user.status)}</Td>
+                    <Td isNumeric>{user.joinedAt}</Td>
+                    <Td>
+                      <HStack justify="center" spacing={2}>
+                        <IconButton
+                          aria-label="编辑"
+                          icon={<FiEdit2 />}
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            // 进入编辑模式前缓存当前行数据
+                            setSelectedUser(user);
+                            setEditFormData({
+                              name: user.name,
+                              email: user.email,
+                              status: user.status,
+                            });
+                            onEditOpen();
+                          }}
+                        />
+                        <IconButton
+                          aria-label="删除"
+                          icon={<FiTrash2 />}
+                          size="sm"
+                          variant="ghost"
+                          colorScheme="red"
+                          onClick={() => {
+                            // 删除也需要记录目标，稍后在确认框中使用
+                            setDeleteTarget(user);
+                            onDeleteOpen();
+                          }}
+                        />
+                      </HStack>
+                    </Td>
+                  </Tr>
+                ))
+              )}
             </Tbody>
           </Table>
         </TableContainer>

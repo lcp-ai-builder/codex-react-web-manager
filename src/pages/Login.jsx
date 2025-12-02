@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Box, Button, Flex, FormControl, FormLabel, Heading, IconButton, Input, Text, useColorMode, useColorModeValue, useToast } from '@chakra-ui/react';
+import { Box, Button, Flex, FormControl, FormLabel, Heading, IconButton, Input, useColorMode, useColorModeValue, useToast } from '@chakra-ui/react';
 import { MoonIcon, SunIcon } from '@chakra-ui/icons';
 import { useNavigate } from 'react-router-dom';
 import { login } from '@/services/api-services.js';
@@ -17,7 +17,6 @@ const LoginPage = () => {
   const pageBg = useColorModeValue('gray.50', 'gray.900');
   const cardBg = useColorModeValue('white', 'gray.800');
   const cardShadow = useColorModeValue('lg', 'dark-lg');
-  const subTextColor = useColorModeValue('gray.500', 'gray.400');
   const setAuth = useAuthStore((state) => state.setAuth);
 
   const isFormValid = userId.trim().length > 0 && password.trim().length > 0;

@@ -21,6 +21,7 @@ const DataTable = ({
 
   const getRowKey = (item, index) => (typeof rowKey === 'function' ? rowKey(item, index) : item?.[rowKey]) ?? index;
   const visibleColumns = Array.isArray(columns) ? columns.filter((column) => column?.visible !== false) : [];
+  const emptyColSpan = visibleColumns.length || columns.length || 1;
 
   return (
     <Box>
@@ -50,18 +51,26 @@ const DataTable = ({
             </Tr>
           </Thead>
           <Tbody>
-            {data.map((item, index) => {
-              const rowProps = typeof getRowProps === 'function' ? getRowProps(item, index) : {};
-              return (
-                <Tr key={getRowKey(item, index)} bg={index % 2 === 0 ? 'transparent' : zebraBg} {...rowProps}>
-                  {visibleColumns.map((column) => (
-                    <Td key={`${getRowKey(item, index)}-${column.header}`} textAlign={column.align}>
-                      {column.render ? column.render(item, index) : item?.[column.dataKey] ?? '—'}
-                    </Td>
-                  ))}
-                </Tr>
-              );
-            })}
+            {data.length === 0 ? (
+              <Tr>
+                <Td colSpan={emptyColSpan} textAlign="center">
+                  暂无数据
+                </Td>
+              </Tr>
+            ) : (
+              data.map((item, index) => {
+                const rowProps = typeof getRowProps === 'function' ? getRowProps(item, index) : {};
+                return (
+                  <Tr key={getRowKey(item, index)} bg={index % 2 === 0 ? 'transparent' : zebraBg} {...rowProps}>
+                    {visibleColumns.map((column) => (
+                      <Td key={`${getRowKey(item, index)}-${column.header}`} textAlign={column.align}>
+                        {column.render ? column.render(item, index) : item?.[column.dataKey] ?? '—'}
+                      </Td>
+                    ))}
+                  </Tr>
+                );
+              })
+            )}
           </Tbody>
         </Table>
       </TableContainer>
