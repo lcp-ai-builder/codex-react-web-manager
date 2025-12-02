@@ -19,9 +19,15 @@ import {
   FiShield,
   FiActivity,
   FiLock,
+  FiShoppingBag,
+  FiList,
+  FiSearch,
 } from 'react-icons/fi';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import useAuthStore from '@/store/useAuthStore.js';
+
+const accentPalette = ['teal.400', 'orange.400', 'purple.400', 'blue.400', 'pink.400', 'green.400'];
+const getAccent = (seed = 0) => accentPalette[Math.abs(seed) % accentPalette.length];
 
 const HomePage = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -33,6 +39,7 @@ const HomePage = () => {
   const isAdmin = currentUser?.id?.toLowerCase?.() === 'admin';
   const [openMenus, setOpenMenus] = useState({
     用户管理: true,
+    订单信息: true,
     ...(isAdmin ? { 系统维护: true } : {}),
   });
   const pageBg = useColorModeValue('gray.100', 'gray.900');
@@ -55,6 +62,14 @@ const HomePage = () => {
         children: [
           { icon: FiUser, label: '普通用户', path: '/home/users/regular' },
           { icon: FiStar, label: 'VIP用户' },
+        ],
+      },
+      {
+        icon: FiShoppingBag,
+        label: '订单信息',
+        children: [
+          { icon: FiList, label: '订单概览', path: '/home/orders/overview' },
+          { icon: FiSearch, label: '订单详细查询', path: '/home/orders/details' },
         ],
       },
     ],
@@ -138,7 +153,7 @@ const HomePage = () => {
         </Flex>
         {/* 菜单区域，支持 hover 反馈和二级折叠 */}
         <List spacing={2}>
-          {menuItems.map((item) => {
+          {menuItems.map((item, index) => {
             const hasChildren = Boolean(item.children?.length);
             const isOpen = openMenus[item.label];
 
@@ -170,7 +185,7 @@ const HomePage = () => {
                     handleToggle();
                   }}
                 >
-                  <Icon as={item.icon} boxSize={5} />
+                  <Icon as={item.icon} boxSize={5} color={getAccent(index)} />
                   <Text fontWeight="medium" display={isCollapsed ? 'none' : 'block'}>
                     {item.label}
                   </Text>
@@ -179,7 +194,7 @@ const HomePage = () => {
                 {!isCollapsed && hasChildren && (
                   <Collapse in={isOpen} animateOpacity>
                     <List spacing={1} mt={1} pl={7}>
-                      {item.children.map((child) => (
+                      {item.children.map((child, childIndex) => (
                         <ListItem
                           key={child.label}
                           display="flex"
@@ -192,7 +207,7 @@ const HomePage = () => {
                           _hover={menuHover}
                           onClick={() => child.path && navigate(child.path)}
                         >
-                          <Icon as={child.icon} boxSize={4} />
+                          <Icon as={child.icon} boxSize={4} color={getAccent(index + childIndex + 1)} />
                           <Text fontSize="sm">{child.label}</Text>
                         </ListItem>
                       ))}
