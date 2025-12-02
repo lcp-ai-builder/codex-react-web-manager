@@ -224,6 +224,7 @@ const RegularUsersPage = () => {
             totalItems={totalItems}
             pageSize={PAGE_SIZE}
             colorScheme="teal"
+            isLoading={loading}
           />
         </Flex>
       </Box>

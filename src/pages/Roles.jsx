@@ -340,7 +340,7 @@ const RolesPage = () => {
         columns={columns}
         data={roles}
         rowKey={(item) => item.id}
-        pagination={{ currentPage, totalPages, onPageChange: handlePageChange }}
+        pagination={{ currentPage, totalPages, onPageChange: handlePageChange, isLoading: loading }}
         getRowProps={(role) => {
           const active = isOpenEnabled(role.isOpen ?? role.status);
           return active ? {} : { color: mutedText, opacity: 0.75 };

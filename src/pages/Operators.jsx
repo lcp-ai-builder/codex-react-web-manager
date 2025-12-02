@@ -470,7 +470,7 @@ const OperatorsPage = () => {
         columns={columns}
         data={operators}
         rowKey={(item) => item.id || item.code}
-        pagination={{ currentPage, totalPages, onPageChange: handlePageChange }}
+        pagination={{ currentPage, totalPages, onPageChange: handlePageChange, isLoading: loading }}
         getRowProps={(operator) => {
           const active = isOpenEnabled(operator.isOpen ?? operator.status);
           return active ? {} : { color: mutedText, opacity: 0.75 };
