@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   Badge,
   Box,
@@ -35,6 +35,10 @@ import usePagedList from '@/hooks/usePagedList.js';
 import { isOpenEnabled } from '@/utils/status.js';
 
 const PAGE_SIZE = 10;
+const statusColorScheme = {
+  open: 'green',
+  closed: 'gray',
+};
 
 const RolesPage = () => {
   // 角色数据与分页状态，数据来源后端
@@ -79,7 +83,6 @@ const RolesPage = () => {
     code: '',
     description: '',
   });
-  const [selectedRole, setSelectedRole] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [statusConfirm, setStatusConfirm] = useState({ isOpen: false, role: null, nextIsOpen: 1 });
@@ -91,11 +94,6 @@ const RolesPage = () => {
   const { isOpen: isAddOpen, onOpen: onAddOpen, onClose: onAddClose } = useDisclosure();
   const { isOpen: isEditOpen, onOpen: onEditOpen, onClose: onEditClose } = useDisclosure();
   const toast = useToast();
-
-  const statusColorScheme = {
-    open: 'green',
-    closed: 'gray',
-  };
 
   const normalizeIsOpen = (value) => (Number(value) === 1 ? 1 : 0);
 
@@ -176,17 +174,18 @@ const RolesPage = () => {
   };
 
   // 打开编辑框时带入选中行数据，保持输入框受控
-  const handleOpenEdit = (role) => {
-    setSelectedRole(role);
-    setEditFormData({
-      id: role.id,
-      name: role.name,
-      code: role.code,
-      description: role.description || '',
-      isOpen: typeof role.isOpen === 'number' ? role.isOpen : isOpenEnabled(role.status) ? 1 : 0,
-    });
-    onEditOpen();
-  };
+  const handleOpenEdit = useCallback(
+    (role) => {
+      setEditFormData({
+        id: role.id,
+        name: role.name,
+        code: role.code,
+        description: role.description || '',
+      });
+      onEditOpen();
+    },
+    [onEditOpen]
+  );
 
   const handleUpdate = async () => {
     if (!editFormData.name.trim() || !editFormData.code.trim()) return;
@@ -196,7 +195,7 @@ const RolesPage = () => {
     try {
       const payload = await updateRole({
         id: editFormData.id,
-        data: { ...editFormData, isOpen: normalizeIsOpen(editFormData.isOpen) },
+        data: editFormData,
         signal: controller.signal,
       });
 
@@ -228,11 +227,11 @@ const RolesPage = () => {
   };
 
   // 删除前先记录目标，弹出确认框避免误删
-  const handleToggleStatus = (role) => {
+  const handleToggleStatus = useCallback((role) => {
     const active = isOpenEnabled(role.isOpen ?? role.status);
     const nextIsOpen = active ? 0 : 1;
     setStatusConfirm({ isOpen: true, role, nextIsOpen });
-  };
+  }, []);
 
   const closeStatusConfirm = () => setStatusConfirm({ isOpen: false, role: null, nextIsOpen: 1 });
 
@@ -328,7 +327,7 @@ const RolesPage = () => {
         ),
       },
     ],
-    [handleToggleStatus, handleOpenEdit, isStatusUpdating, mutedText, statusColorScheme]
+    [handleToggleStatus, handleOpenEdit, isStatusUpdating, mutedText]
   );
 
   return (

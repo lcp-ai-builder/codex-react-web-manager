@@ -38,6 +38,10 @@ import usePagedList from '@/hooks/usePagedList.js';
 import { isOpenEnabled } from '@/utils/status.js';
 
 const PAGE_SIZE = 10;
+const statusColorScheme = {
+  open: 'green',
+  closed: 'gray',
+};
 
 const OperatorsPage = () => {
   const {
@@ -99,11 +103,6 @@ const OperatorsPage = () => {
   const { isOpen: isAddOpen, onOpen: onAddOpen, onClose: onAddClose } = useDisclosure();
   const { isOpen: isEditOpen, onOpen: onEditOpen, onClose: onEditClose } = useDisclosure();
   const toast = useToast();
-
-  const statusColorScheme = {
-    open: 'green',
-    closed: 'gray',
-  };
 
   const normalizeIsOpen = (value) => (Number(value) === 1 ? 1 : 0);
 
@@ -257,23 +256,30 @@ const OperatorsPage = () => {
     }
   };
 
-  const handleOpenEdit = (operator) => {
-    setEditFormData({
-      id: operator.id,
-      operatorNo: operator.operatorNo || operator.operator_no || operator.code || '',
-      name: operator.name || '',
-      loginName: operator.loginName || '',
-      phone: operator.phone || '',
-      email: operator.email || '',
-      roleId: operator.roleId || operator.role_id || rolesOptions.find((r) => r.name === operator.roleName)?.id || rolesOptions[0]?.id || '',
-    });
-    onEditOpen();
-  };
+  const handleOpenEdit = useCallback(
+    (operator) => {
+      setEditFormData({
+        id: operator.id,
+        operatorNo: operator.operatorNo || operator.operator_no || operator.code || '',
+        name: operator.name || '',
+        loginName: operator.loginName || '',
+        phone: operator.phone || '',
+        email: operator.email || '',
+        roleId:
+          operator.roleId || operator.role_id || rolesOptions.find((r) => r.name === operator.roleName)?.id || rolesOptions[0]?.id || '',
+      });
+      onEditOpen();
+    },
+    [onEditOpen, rolesOptions]
+  );
 
-  const handleOpenDetail = (operator) => {
-    setDetailTarget(operator);
-    onDetailOpen();
-  };
+  const handleOpenDetail = useCallback(
+    (operator) => {
+      setDetailTarget(operator);
+      onDetailOpen();
+    },
+    [onDetailOpen]
+  );
 
   const handleToggleStatus = (operator) => {
     const active = isOpenEnabled(operator.isOpen ?? operator.status ?? 1);
@@ -410,7 +416,7 @@ const OperatorsPage = () => {
         ),
       },
     ],
-    [statusColorScheme, handleOpenDetail, handleOpenEdit, mutedText]
+    [handleOpenDetail, handleOpenEdit, isStatusUpdating, mutedText, rolesOptions]
   );
 
   const handleUpdate = async () => {
