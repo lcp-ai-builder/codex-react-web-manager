@@ -7,8 +7,8 @@ import RegularUsersPage from '@/pages/RegularUsers.jsx';
 import MaintenancePage from '@/pages/MaintenancePage.jsx';
 import RolesPage from '@/pages/Roles.jsx';
 import OperatorsPage from '@/pages/Operators.jsx';
-import OrderDetailsPage from '@/pages/OrderDetails.jsx';
-import OrderOverviewPage from '@/pages/OrderOverview.jsx';
+import TradeQueryPage from '@/pages/TradeQuery.jsx';
+import TradeOverviewPage from '@/pages/TradeOverview.jsx';
 
 const AppRoutes = () => (
   <Routes>
@@ -23,8 +23,9 @@ const AppRoutes = () => (
       <Route path="system/permissions" element={<MaintenancePage title="权限分配" />} />
       <Route path="system/logs" element={<MaintenancePage title="操作日志" />} />
       <Route path="system/password" element={<MaintenancePage title="修改密码" />} />
-      <Route path="orders/overview" element={<OrderOverviewPage />} />
-      <Route path="orders/details" element={<OrderDetailsPage />} />
+      <Route path="trades/overview" element={<TradeOverviewPage />} />
+      <Route path="trades/query" element={<TradeQueryPage />} />
+      <Route path="orders/*" element={<Navigate to="/home/trades/overview" replace />} />
     </Route>
     {/* 未匹配路径兜底重定向到登录页 */}
     <Route path="*" element={<Navigate to="/" replace />} />

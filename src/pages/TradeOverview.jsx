@@ -3,7 +3,7 @@ import { Box, Flex, Heading, Text, useColorModeValue } from '@chakra-ui/react';
 import { ResponsiveBar } from '@nivo/bar';
 import { last10DaysOrders } from '@/data/orderOverview.js';
 
-const OrderOverviewPage = () => {
+const TradeOverviewPage = () => {
   const cardBg = useColorModeValue('white', 'gray.800');
   const axisColor = useColorModeValue('#334155', '#cbd5e1');
   const gridColor = useColorModeValue('#e2e8f0', '#475569');
@@ -16,10 +16,10 @@ const OrderOverviewPage = () => {
 
   return (
     <Flex direction="column" gap={6}>
-      <Heading size="lg">订单概览</Heading>
+      <Heading size="lg">交易概览</Heading>
       <Box bg={cardBg} borderRadius="lg" boxShadow="sm" p={6} w={{ base: '100%', md: '40%' }}>
         <Heading size="md" mb={4}>
-          最近10天的订单量
+          最近10天的交易量
         </Heading>
         <Box h="320px">
           <ResponsiveBar
@@ -42,7 +42,7 @@ const OrderOverviewPage = () => {
               tickSize: 0,
               tickPadding: 8,
               tickValues: 5,
-              legend: '订单量',
+              legend: '交易量',
               legendOffset: -36,
               legendPosition: 'middle',
             }}
@@ -67,4 +67,4 @@ const OrderOverviewPage = () => {
   );
 };
 
-export default OrderOverviewPage;
+export default TradeOverviewPage;

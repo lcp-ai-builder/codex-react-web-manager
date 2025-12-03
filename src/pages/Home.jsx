@@ -39,7 +39,7 @@ const HomePage = () => {
   const isAdmin = currentUser?.id?.toLowerCase?.() === 'admin';
   const [openMenus, setOpenMenus] = useState({
     用户管理: true,
-    订单信息: true,
+    交易信息: true,
     ...(isAdmin ? { 系统维护: true } : {}),
   });
   const pageBg = useColorModeValue('gray.100', 'gray.900');
@@ -66,10 +66,10 @@ const HomePage = () => {
       },
       {
         icon: FiShoppingBag,
-        label: '订单信息',
+        label: '交易信息',
         children: [
-          { icon: FiList, label: '订单概览', path: '/home/orders/overview' },
-          { icon: FiSearch, label: '订单详细查询', path: '/home/orders/details' },
+          { icon: FiList, label: '交易概览', path: '/home/trades/overview' },
+          { icon: FiSearch, label: '交易查询', path: '/home/trades/query' },
         ],
       },
     ],
