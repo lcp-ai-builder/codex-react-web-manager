@@ -1,67 +1,121 @@
-import { useMemo } from 'react';
-import { Box, Flex, Heading, Text, useColorModeValue } from '@chakra-ui/react';
-import { ResponsiveBar } from '@nivo/bar';
-import { last10DaysOrders } from '@/data/orderOverview.js';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  Alert,
+  AlertIcon,
+  Box,
+  Button,
+  Flex,
+  Heading,
+  Spinner,
+  Stat,
+  StatHelpText,
+  StatLabel,
+  StatNumber,
+  Text,
+  useColorModeValue,
+} from '@chakra-ui/react';
+import { fetchRecentHourTradeSummary } from '@/services/trade-service.js';
+
+const formatTime = (timestamp) => {
+  if (!timestamp) return '-';
+  const parsed = Number(timestamp);
+  const date = new Date(parsed);
+  return Number.isNaN(date.getTime()) ? '-' : date.toLocaleString();
+};
+
+const toNumber = (value) => {
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    return Number.isNaN(parsed) ? 0 : parsed;
+  }
+  return 0;
+};
 
 const TradeOverviewPage = () => {
   const cardBg = useColorModeValue('white', 'gray.800');
-  const axisColor = useColorModeValue('#334155', '#cbd5e1');
-  const gridColor = useColorModeValue('#e2e8f0', '#475569');
-  const barColor = useColorModeValue('#0f766e', '#2dd4bf');
+  const borderColor = useColorModeValue('gray.200', 'gray.700');
+  const subtleText = useColorModeValue('gray.600', 'gray.300');
+  const accent = useColorModeValue('teal.600', 'teal.200');
+  const [summary, setSummary] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const chartData = useMemo(() => last10DaysOrders.map((item) => ({ day: item.day, value: item.value })), []);
+  const loadSummary = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const data = await fetchRecentHourTradeSummary();
+      setSummary({
+        count: toNumber(data?.count),
+        totalAmount: toNumber(data?.totalAmount),
+        windowStart: data?.windowStart,
+        windowEnd: data?.windowEnd,
+        fallback: Boolean(data?.fallback),
+      });
+    } catch (err) {
+      setError(err.message || '加载失败');
+      setSummary(null);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const peak = Math.max(...last10DaysOrders.map((d) => d.value), 0);
-  const avg = Math.round(last10DaysOrders.reduce((sum, cur) => sum + cur.value, 0) / last10DaysOrders.length);
+  useEffect(() => {
+    loadSummary();
+  }, [loadSummary]);
+
+  const windowText = useMemo(() => {
+    if (!summary) return '-';
+    return `${formatTime(summary.windowStart)} ~ ${formatTime(summary.windowEnd)}`;
+  }, [summary]);
 
   return (
-    <Flex direction="column" gap={6}>
-      <Heading size="lg">交易概览</Heading>
-      <Box bg={cardBg} borderRadius="lg" boxShadow="sm" p={6} w={{ base: '100%', md: '40%' }}>
-        <Heading size="md" mb={4}>
-          最近10天的交易量
-        </Heading>
-        <Box h="320px">
-          <ResponsiveBar
-            data={chartData}
-            keys={['value']}
-            indexBy="day"
-            margin={{ top: 24, right: 24, bottom: 48, left: 44 }}
-            padding={0.2}
-            colors={[barColor]}
-            enableLabel
-            labelTextColor={axisColor}
-            borderRadius={4}
-            axisBottom={{
-              tickSize: 0,
-              tickPadding: 10,
-              legend: '',
-              legendOffset: 32,
-            }}
-            axisLeft={{
-              tickSize: 0,
-              tickPadding: 8,
-              tickValues: 5,
-              legend: '交易量',
-              legendOffset: -36,
-              legendPosition: 'middle',
-            }}
-            enableGridY
-            gridYValues={5}
-            theme={{
-              textColor: axisColor,
-              axis: {
-                domain: { line: { stroke: axisColor, strokeWidth: 1 } },
-                ticks: { line: { stroke: axisColor, strokeWidth: 1 }, text: { fill: axisColor } },
-              },
-              grid: { line: { stroke: gridColor, strokeWidth: 1, strokeDasharray: '4 4' } },
-              tooltip: { container: { background: cardBg, color: axisColor } },
-            }}
-          />
-        </Box>
-        <Text mt={3} fontSize="sm" color={useColorModeValue('gray.600', 'gray.300')}>
-          峰值：{peak} 单 / 平均：{avg} 单
-        </Text>
+    <Flex direction="column" gap={4}>
+      <Flex justify="space-between" align="center">
+        <Heading size="lg">交易概览</Heading>
+        <Button size="sm" colorScheme="teal" onClick={loadSummary} isLoading={loading}>
+          刷新
+        </Button>
+      </Flex>
+
+      {error && (
+        <Alert status="error">
+          <AlertIcon />
+          {error}
+        </Alert>
+      )}
+
+      <Box bg={cardBg} borderRadius="lg" border="1px solid" borderColor={borderColor} p={6} boxShadow="sm">
+        <Flex justify="space-between" align={{ base: 'stretch', md: 'center' }} gap={6} direction={{ base: 'column', md: 'row' }}>
+          <Box>
+            <Text fontSize="sm" color={subtleText} mb={1}>
+              统计时间窗口
+            </Text>
+            <Text fontWeight="semibold">{windowText}</Text>
+            {summary?.fallback && (
+              <Text mt={2} fontSize="sm" color="orange.400">
+                最近一小时无数据，已回退到最近有数据的1小时区间
+              </Text>
+            )}
+          </Box>
+          <Flex gap={6} flexWrap="wrap">
+            <Stat minW="180px">
+              <StatLabel>交易笔数</StatLabel>
+              <StatNumber color={accent}>
+                {loading ? <Spinner size="sm" /> : summary?.count ?? '--'}
+              </StatNumber>
+              <StatHelpText color={subtleText}>最近一小时内的成交总笔数</StatHelpText>
+            </Stat>
+            <Stat minW="220px">
+              <StatLabel>总交易金额</StatLabel>
+              <StatNumber color={accent}>
+                {loading ? <Spinner size="sm" /> : summary ? summary.totalAmount.toLocaleString() : '--'}
+              </StatNumber>
+              <StatHelpText color={subtleText}>包含手续费在内的成交总额</StatHelpText>
+            </Stat>
+          </Flex>
+        </Flex>
       </Box>
     </Flex>
   );
