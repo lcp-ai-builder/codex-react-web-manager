@@ -14,7 +14,7 @@ import {
   Text,
   useColorModeValue,
 } from '@chakra-ui/react';
-import { fetchRecentHourTradeSummary } from '@/services/trade-service.js';
+import { createTradeSummarySocket, fetchRecentHourTradeSummary } from '@/services/trade-service.js';
 
 const formatTime = (timestamp) => {
   if (!timestamp) return '-';
@@ -37,9 +37,12 @@ const TradeOverviewPage = () => {
   const borderColor = useColorModeValue('gray.200', 'gray.700');
   const subtleText = useColorModeValue('gray.600', 'gray.300');
   const accent = useColorModeValue('teal.600', 'teal.200');
+  const secondaryBg = useColorModeValue('green.50', 'green.900');
   const [summary, setSummary] = useState(null);
+  const [pushedSummary, setPushedSummary] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [wsError, setWsError] = useState('');
 
   const loadSummary = useCallback(async () => {
     setLoading(true);
@@ -65,10 +68,34 @@ const TradeOverviewPage = () => {
     loadSummary();
   }, [loadSummary]);
 
+  useEffect(() => {
+    const socket = createTradeSummarySocket({
+      onOpen: () => setWsError(''),
+      onError: (err) => setWsError(err?.message || 'WebSocket 连接失败'),
+      onMessage: (body) => {
+        setPushedSummary({
+          count: toNumber(body?.count),
+          totalAmount: toNumber(body?.totalAmount),
+          windowStart: body?.windowStart,
+          windowEnd: body?.windowEnd,
+          fallback: Boolean(body?.fallback),
+        });
+      },
+    });
+    return () => {
+      socket.close();
+    };
+  }, []);
+
   const windowText = useMemo(() => {
     if (!summary) return '-';
     return `${formatTime(summary.windowStart)} ~ ${formatTime(summary.windowEnd)}`;
   }, [summary]);
+
+  const pushedWindowText = useMemo(() => {
+    if (!pushedSummary) return '-';
+    return `${formatTime(pushedSummary.windowStart)} ~ ${formatTime(pushedSummary.windowEnd)}`;
+  }, [pushedSummary]);
 
   return (
     <Flex direction="column" gap={4}>
@@ -83,6 +110,12 @@ const TradeOverviewPage = () => {
         <Alert status="error">
           <AlertIcon />
           {error}
+        </Alert>
+      )}
+      {wsError && (
+        <Alert status="warning">
+          <AlertIcon />
+          {wsError}
         </Alert>
       )}
 
@@ -113,6 +146,38 @@ const TradeOverviewPage = () => {
                 {loading ? <Spinner size="sm" /> : summary ? summary.totalAmount.toLocaleString() : '--'}
               </StatNumber>
               <StatHelpText color={subtleText}>包含手续费在内的成交总额</StatHelpText>
+            </Stat>
+          </Flex>
+        </Flex>
+      </Box>
+
+      <Box bg={secondaryBg} borderRadius="lg" border="1px solid" borderColor={borderColor} p={6} boxShadow="sm">
+        <Flex justify="space-between" align={{ base: 'stretch', md: 'center' }} gap={6} direction={{ base: 'column', md: 'row' }}>
+          <Box>
+            <Text fontSize="sm" color={subtleText} mb={1}>
+              实时推送时间窗口
+            </Text>
+            <Text fontWeight="semibold">{pushedWindowText}</Text>
+            {pushedSummary?.fallback && (
+              <Text mt={2} fontSize="sm" color="orange.400">
+                最近一小时无数据，已回退到最近有数据的1小时区间
+              </Text>
+            )}
+          </Box>
+          <Flex gap={6} flexWrap="wrap">
+            <Stat minW="180px">
+              <StatLabel>实时交易笔数</StatLabel>
+              <StatNumber color={accent}>
+                {pushedSummary ? pushedSummary.count : '--'}
+              </StatNumber>
+              <StatHelpText color={subtleText}>来自 WebSocket 推送</StatHelpText>
+            </Stat>
+            <Stat minW="220px">
+              <StatLabel>实时总交易金额</StatLabel>
+              <StatNumber color={accent}>
+                {pushedSummary ? pushedSummary.totalAmount.toLocaleString() : '--'}
+              </StatNumber>
+              <StatHelpText color={subtleText}>每分钟自动更新</StatHelpText>
             </Stat>
           </Flex>
         </Flex>

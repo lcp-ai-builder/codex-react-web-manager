@@ -9,6 +9,9 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  define: {
+    global: 'window',
+  },
   server: {
     port: 5173,
     // host: '192.168.127.128',
@@ -33,6 +36,11 @@ export default defineConfig({
         target: 'http://192.168.127.128:8181',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
+      },
+      '/ws': {
+        target: 'http://192.168.127.128:8181',
+        changeOrigin: true,
+        ws: true,
       },
     },
   },
