@@ -20,7 +20,8 @@
     "en": "EN"
   },
   "action": {
-    "logout": "Logout"
+    "logout": "Logout",
+    "search": "Search"
   },
   "table": {
     "noData": "No data"
@@ -30,6 +31,13 @@
     "withTotals": " · {{pageSize}} per page · {{totalItems}} total",
     "loading": " · Loading...",
     "prev": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "perPage": "Per page",
+    "totalItems": "{{total}} total",
+    "first": "First",
+    "last": "Last",
+    "jumpTo": "Jump to",
+    "pageUnit": "page",
+    "pageXofY": "Page {{current}} / {{total}}"
   }
 }

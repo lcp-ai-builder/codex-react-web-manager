@@ -1,8 +1,9 @@
 import { Box, Button, Flex, FormControl, FormLabel, Input, Select, Text, useColorModeValue } from '@chakra-ui/react';
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 /**
- * A reusable layout that combines a search filter row, a table area, and a pagination/footer slot.
+ * A reusable layout that combines a search filter row, a table area, and an optional overlay + pagination footer.
  * - `filters`: array of { key, label, render, minW } where render returns an input/select node.
  * - `onSearch`: handler for the search button; button shows when provided.
  * - `searchLabel`: text for the search button.
@@ -14,23 +15,14 @@ import { useEffect, useMemo, useState } from 'react';
  * - `cardProps`: additional props forwarded to the outer card container.
  * - `paginationConfig`: optional { page, totalPages, totalCount, pageSize, pageSizeOptions, onPageChange, onPageSizeChange, isLoading, pageWindowSize } to use built-in pagination UI.
  */
-const SearchTableLayout = ({
-  filters = [],
-  onSearch,
-  searchLabel = '查询',
-  extraActions,
-  table,
-  overlay,
-  pagination,
-  paginationConfig,
-  error,
-  cardProps = {},
-}) => {
+const BigDataSearchTableLayout = ({ filters = [], onSearch, searchLabel, extraActions, table, overlay, pagination, paginationConfig, error, cardProps = {} }) => {
+  const { t } = useTranslation();
   const cardBg = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
   const textMuted = useColorModeValue('gray.600', 'gray.400');
   const [pageInput, setPageInput] = useState(String(paginationConfig?.page ?? 1));
   const pageWindowSize = paginationConfig?.pageWindowSize ?? 5;
+  const searchText = searchLabel ?? t('action.search');
 
   useEffect(() => {
     if (paginationConfig?.page) {
@@ -57,7 +49,7 @@ const SearchTableLayout = ({
     return (
       <Flex align="center" justify="space-between" gap={3} flexWrap="wrap">
         <Flex align="center" gap={2}>
-          <Text>每页</Text>
+          <Text>{t('pagination.perPage')}</Text>
           <Select
             size="sm"
             w="80px"
@@ -74,17 +66,17 @@ const SearchTableLayout = ({
               </option>
             ))}
           </Select>
-          <Text>条 · 共 {totalCount} 条</Text>
+          <Text>{t('pagination.totalItems', { total: totalCount })}</Text>
         </Flex>
         <Flex align="center" gap={2} flexWrap="wrap">
           <Button size="sm" onClick={() => onPageChange?.(1)} isDisabled={page <= 1 || isLoading}>
-            首页
+            {t('pagination.first')}
           </Button>
           <Button size="sm" onClick={() => onPageChange?.(page - 1)} isDisabled={page <= 1 || isLoading}>
-            上一页
+            {t('pagination.prev')}
           </Button>
           <Text color={textMuted}>
-            第 {page} / {totalPages} 页
+            {t('pagination.pageXofY', { current: page, total: totalPages })}
           </Text>
           <Flex align="center" gap={1}>
             {computedPageNumbers.map((num) => (
@@ -94,13 +86,13 @@ const SearchTableLayout = ({
             ))}
           </Flex>
           <Button size="sm" onClick={() => onPageChange?.(page + 1)} isDisabled={page >= totalPages || isLoading}>
-            下一页
+            {t('pagination.next')}
           </Button>
           <Button size="sm" onClick={() => onPageChange?.(totalPages)} isDisabled={page >= totalPages || isLoading}>
-            末页
+            {t('pagination.last')}
           </Button>
           <Flex align="center" gap={2}>
-            <Text>跳转到</Text>
+            <Text>{t('pagination.jumpTo')}</Text>
             <Input
               size="sm"
               w="80px"
@@ -115,7 +107,7 @@ const SearchTableLayout = ({
                 }
               }}
             />
-            <Text>页</Text>
+            <Text>{t('pagination.pageUnit')}</Text>
           </Flex>
         </Flex>
       </Flex>
@@ -124,8 +116,8 @@ const SearchTableLayout = ({
 
   return (
     <Box bg={cardBg} borderRadius="lg" boxShadow="sm" border="1px solid" borderColor={borderColor} p={6} {...cardProps}>
-      <Flex justify="space-between" align="flex-end" mb={4} gap={3} flexWrap="wrap">
-        <Flex gap={3} align="center" flexWrap="wrap">
+      <Flex justify="space-between" align="flex-end" mb={4} gap={3} flexWrap="nowrap">
+        <Flex gap={3} align="center" flexWrap="nowrap" overflowX="auto" minW={0}>
           {filters.map((filter) => (
             <FormControl key={filter.key} minW={filter.minW || '240px'} display="flex" alignItems="center" gap={2}>
               {filter.label ? (
@@ -139,7 +131,7 @@ const SearchTableLayout = ({
           {onSearch ? (
             <FormControl minW="160px" display="flex" alignItems="center" gap={2}>
               <Button size="sm" colorScheme="teal" onClick={onSearch}>
-                {searchLabel}
+                {searchText}
               </Button>
             </FormControl>
           ) : null}
@@ -163,4 +155,4 @@ const SearchTableLayout = ({
   );
 };
 
-export default SearchTableLayout;
+export default BigDataSearchTableLayout;

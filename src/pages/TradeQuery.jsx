@@ -24,7 +24,7 @@ import {
   ModalFooter,
   Text,
 } from '@chakra-ui/react';
-import SearchTableLayout from '@/components/SearchTableLayout.jsx';
+import BigDataSearchTableLayout from '@/components/BigDataSearchTableLayout.jsx';
 
 const TradeQueryPage = () => {
   const zebra = useColorModeValue('gray.50', 'gray.700');
@@ -200,7 +200,7 @@ const TradeQueryPage = () => {
 
   return (
     <>
-      <SearchTableLayout
+      <BigDataSearchTableLayout
         filters={filterItems}
         onSearch={handleSearch}
         searchLabel="查询"
@@ -215,7 +215,6 @@ const TradeQueryPage = () => {
           totalPages,
           totalCount,
           pageSize,
-          pageSizeOptions: [5, 10, 20, 50, 100],
           onPageChange: handlePageChange,
           onPageSizeChange: (size) => {
             setPageSize(size);
