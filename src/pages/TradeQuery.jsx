@@ -25,6 +25,7 @@ import {
   Text,
 } from '@chakra-ui/react';
 import BigDataSearchTableLayout from '@/components/BigDataSearchTableLayout.jsx';
+import { getTrades } from '@/services/trade-service.js';
 
 const TradeQueryPage = () => {
   const zebra = useColorModeValue('gray.50', 'gray.700');
@@ -59,22 +60,15 @@ const TradeQueryPage = () => {
     setLoading(true);
     setError('');
     try {
-      const params = new URLSearchParams({
-        page: String(page),
-        size: String(pageSize),
+      const { records, total, totalPages: normalizedTotalPages, pageSize: normalizedPageSize } = await getTrades({
+        page,
+        size: pageSize,
+        filters,
       });
-      if (filters.notesKeyword) params.append('notesKeyword', filters.notesKeyword);
-      if (filters.tradeId) params.append('tradeId', filters.tradeId);
-      if (filters.userId) params.append('userId', filters.userId);
-      const response = await fetch(`http://192.168.127.128:8181/es/trades?${params.toString()}`);
-      if (!response.ok) throw new Error(`请求失败：${response.status}`);
-      const result = await response.json();
-      const payload = Array.isArray(result?.trades) ? result.trades : Array.isArray(result) ? result : result?.data || result?.content || [];
-      setTrades(Array.isArray(payload) ? payload : []);
-      const total = Number(result?.total) || result?.totalElements || result?.totalCount || result?.count || (Array.isArray(payload) ? payload.length : 0);
-      const sizeFromResponse = Number(result?.size) || pageSize;
+      setTrades(records);
       setTotalCount(total);
-      setTotalPages(Math.max(1, result?.totalPages || Math.ceil(total / sizeFromResponse) || 1));
+      setTotalPages(normalizedTotalPages);
+      setPageSize(normalizedPageSize);
     } catch (err) {
       setError(err.message || '查询失败');
       setTrades([]);
