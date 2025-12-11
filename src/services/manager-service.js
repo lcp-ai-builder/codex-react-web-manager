@@ -76,6 +76,13 @@ export const updateOperatorIsOpen = async ({ id, isOpen, signal }) =>
     signal,
   });
 
+export const resetOperatorPassword = async ({ operatorId, loginInfoId, password, signal }) =>
+  request('/operators/reset-password', {
+    method: 'POST',
+    body: JSON.stringify({ operatorId, loginInfoId, password }),
+    signal,
+  });
+
 // 角色
 export const fetchRoles = async ({ page, pageSize, signal }) => request(`/roles?page=${page}&pageSize=${pageSize}`, { signal });
 

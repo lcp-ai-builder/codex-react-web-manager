@@ -4,12 +4,30 @@ import { ChakraProvider, ColorModeScript, extendTheme } from '@chakra-ui/react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import App from '@/App.jsx';
 import useAuthStore from '@/store/useAuthStore.js';
+import sourceHanSans from '@/assets/fonts/SourceHanSansSC-Normal.otf';
 
 // 全局主题：配置初始配色方案，后续 Chakra 组件都会遵守
 const theme = extendTheme({
   config: {
     initialColorMode: 'light',
     useSystemColorMode: true,
+  },
+  fonts: {
+    heading: 'SourceHanSansSC, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    body: 'SourceHanSansSC, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  },
+  styles: {
+    global: {
+      '@font-face': [
+        {
+          fontFamily: 'SourceHanSansSC',
+          src: `url(${sourceHanSans}) format('opentype')`,
+          fontWeight: 'normal',
+          fontStyle: 'normal',
+          fontDisplay: 'swap',
+        },
+      ],
+    },
   },
 });
 

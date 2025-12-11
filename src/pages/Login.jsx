@@ -29,10 +29,29 @@ const LoginPage = () => {
       const data = await login({ userId, password: hashedPassword });
 
       if (data.success) {
+        const parsedRootMenus = (() => {
+          if (Array.isArray(data?.rootMenus)) return data.rootMenus;
+          if (typeof data?.rootMenus === 'string') {
+            try {
+              const parsed = JSON.parse(data.rootMenus);
+              if (Array.isArray(parsed)) return parsed;
+            } catch (err) {
+              console.warn('Failed to parse rootMenus from login response', err);
+            }
+          }
+          return [];
+        })();
         // 持久化当前登录人，方便首页判断是否为 admin
         setAuth({
           token: data?.token || '',
-          user: { id: userId, name: data?.name || userId },
+          user: {
+            id: userId,
+            name: data?.operatorName || data?.name || userId,
+            roleId: data?.roleId,
+            roleName: data?.roleName,
+            roleCode: data?.roleCode,
+            rootMenus: parsedRootMenus,
+          },
         });
         navigate('/home');
       } else {

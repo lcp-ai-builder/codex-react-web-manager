@@ -7,6 +7,7 @@ import RegularUsersPage from '@/pages/RegularUsers.jsx';
 import MaintenancePage from '@/pages/MaintenancePage.jsx';
 import RolesPage from '@/pages/Roles.jsx';
 import OperatorsPage from '@/pages/Operators.jsx';
+import ResetPasswordPage from '@/pages/ResetPassword.jsx';
 import TradeQueryPage from '@/pages/TradeQuery.jsx';
 import TradeOverviewPage from '@/pages/TradeOverview.jsx';
 
@@ -19,10 +20,8 @@ const AppRoutes = () => (
       <Route path="users/regular" element={<RegularUsersPage />} />
       <Route path="system/operator" element={<OperatorsPage />} />
       <Route path="system/roles" element={<RolesPage />} />
-      <Route path="system/menus" element={<MaintenancePage title="菜单管理" />} />
-      <Route path="system/permissions" element={<MaintenancePage title="权限分配" />} />
       <Route path="system/logs" element={<MaintenancePage title="操作日志" />} />
-      <Route path="system/password" element={<MaintenancePage title="修改密码" />} />
+      <Route path="system/password" element={<ResetPasswordPage />} />
       <Route path="trades/overview" element={<TradeOverviewPage />} />
       <Route path="trades/query" element={<TradeQueryPage />} />
       <Route path="orders/*" element={<Navigate to="/home/trades/overview" replace />} />

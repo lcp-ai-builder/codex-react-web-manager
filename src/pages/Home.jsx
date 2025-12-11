@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Avatar, Box, Button, Collapse, Flex, Heading, Icon, IconButton, List, ListItem, Text, VStack, useColorMode, useColorModeValue } from '@chakra-ui/react';
 import {
   FiHome,
@@ -15,8 +15,6 @@ import {
   FiTool,
   FiUserCheck,
   FiKey,
-  FiMenu,
-  FiShield,
   FiActivity,
   FiLock,
   FiShoppingBag,
@@ -37,10 +35,17 @@ const HomePage = () => {
   const currentUser = useAuthStore((state) => state.currentUser) || { id: 'admin', name: '管理员' };
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const isAdmin = currentUser?.id?.toLowerCase?.() === 'admin';
+  const allowedRootMenus = useMemo(() => {
+    if (currentUser?.rootMenus === undefined || currentUser?.rootMenus === null) return null;
+    return Array.isArray(currentUser.rootMenus) ? currentUser.rootMenus : [];
+  }, [currentUser?.rootMenus]);
+  const canSeeSystemMaintenance = isAdmin || (Array.isArray(allowedRootMenus) && allowedRootMenus.includes('/home/system'));
+  const canSeeSystemLogs = isAdmin || (Array.isArray(allowedRootMenus) && allowedRootMenus.includes('/home/system/logs'));
   const [openMenus, setOpenMenus] = useState({
     用户管理: true,
     交易信息: true,
-    ...(isAdmin ? { 系统维护: true } : {}),
+    ...(canSeeSystemMaintenance ? { 系统维护: true } : {}),
+    ...(canSeeSystemLogs ? { 系统日志信息: true } : {}),
   });
   const pageBg = useColorModeValue('gray.100', 'gray.900');
   const sidebarBg = useColorModeValue('white', 'gray.800');
@@ -53,12 +58,22 @@ const HomePage = () => {
     navigate('/login');
   };
 
+  useEffect(() => {
+    setOpenMenus({
+      用户管理: true,
+      交易信息: true,
+      ...(canSeeSystemMaintenance ? { 系统维护: true } : {}),
+      ...(canSeeSystemLogs ? { 系统日志信息: true } : {}),
+    });
+  }, [canSeeSystemLogs, canSeeSystemMaintenance]);
+
   const baseMenuItems = useMemo(
     () => [
       { icon: FiHome, label: '仪表盘', path: '/home' },
       {
         icon: FiUsers,
         label: '用户管理',
+        rootPath: '/home/users',
         children: [
           { icon: FiUser, label: '普通用户', path: '/home/users/regular' },
           { icon: FiStar, label: 'VIP用户' },
@@ -67,6 +82,7 @@ const HomePage = () => {
       {
         icon: FiShoppingBag,
         label: '交易信息',
+        rootPath: '/home/trades',
         children: [
           { icon: FiList, label: '交易概览', path: '/home/trades/overview' },
           { icon: FiSearch, label: '交易查询', path: '/home/trades/query' },
@@ -80,24 +96,47 @@ const HomePage = () => {
     () => ({
       icon: FiTool,
       label: '系统维护',
+      rootPath: '/home/system',
       children: [
         { icon: FiUserCheck, label: '操作员管理', path: '/home/system/operator' },
         { icon: FiKey, label: '角色管理', path: '/home/system/roles' },
-        { icon: FiMenu, label: '菜单管理', path: '/home/system/menus' },
-        { icon: FiShield, label: '权限分配', path: '/home/system/permissions' },
-        { icon: FiActivity, label: '操作日志', path: '/home/system/logs' },
         { icon: FiLock, label: '修改密码', path: '/home/system/password' },
       ],
     }),
     []
   );
 
-  // 左侧菜单定义：支持多级、图标和路由跳转；admin 独享“系统维护”
+  const systemLogMenu = useMemo(
+    () => ({
+      icon: FiActivity,
+      label: '系统日志信息',
+      rootPath: '/home/system/logs',
+      children: [{ icon: FiActivity, label: '操作日志', path: '/home/system/logs' }],
+    }),
+    []
+  );
+
+  const shouldIncludeMenu = useCallback(
+    (item) => {
+      if (isAdmin) return true;
+      if (allowedRootMenus === null) return true;
+      if (!item.rootPath) return true;
+      return allowedRootMenus.includes(item.rootPath);
+    },
+    [allowedRootMenus, isAdmin]
+  );
+
+  // 左侧菜单定义：支持多级、图标和路由跳转；基于 root_menus 做过滤
   const menuItems = useMemo(() => {
-    const items = [...baseMenuItems];
-    if (isAdmin) items.push(adminMenu);
+    const items = baseMenuItems.filter(shouldIncludeMenu);
+    if (canSeeSystemMaintenance && shouldIncludeMenu(adminMenu)) {
+      items.push(adminMenu);
+    }
+    if (canSeeSystemLogs && shouldIncludeMenu(systemLogMenu)) {
+      items.push(systemLogMenu);
+    }
     return items;
-  }, [adminMenu, baseMenuItems, isAdmin]);
+  }, [adminMenu, baseMenuItems, canSeeSystemLogs, canSeeSystemMaintenance, shouldIncludeMenu, systemLogMenu]);
 
   // 将菜单项拍平成 path->label 映射，方便抬头展示“当前位置”
   const menuPathLabelMap = useMemo(() => {
@@ -176,21 +215,21 @@ const HomePage = () => {
 
             return (
               <Box key={item.label}>
-              <ListItem
-                display="flex"
-                alignItems="center"
-                justifyContent={isCollapsed ? 'center' : 'flex-start'}
-                gap={isCollapsed ? 0 : 3}
-                px={isCollapsed ? 2 : 3}
-                py={2}
-                borderRadius="md"
-                cursor="pointer"
-                _hover={menuHover}
-                onClick={() => {
-                  if (item.path) {
-                    navigate(item.path);
-                    return;
-                  }
+                <ListItem
+                  display="flex"
+                  alignItems="center"
+                  justifyContent={isCollapsed ? 'center' : 'flex-start'}
+                  gap={isCollapsed ? 0 : 3}
+                  px={isCollapsed ? 2 : 3}
+                  py={2}
+                  borderRadius="md"
+                  cursor="pointer"
+                  _hover={menuHover}
+                  onClick={() => {
+                    if (item.path) {
+                      navigate(item.path);
+                      return;
+                    }
                     handleToggle();
                   }}
                 >
