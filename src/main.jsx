@@ -14,13 +14,15 @@ const theme = extendTheme({
 });
 
 // React18 新的渲染方式，包裹 Chakra Provider 和路由
+const routerBase = (import.meta.env.BASE_URL || '/').replace(/\/$/, '');
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <ChakraProvider theme={theme}>
       {/* ColorModeScript 让颜色模式在首次渲染时就正确 */}
       <ColorModeScript initialColorMode={theme.config.initialColorMode} />
       {/* BrowserRouter 负责监听 URL 并渲染 <App /> 中定义的路由 */}
-      <BrowserRouter>
+      <BrowserRouter basename={routerBase}>
         <Routes>
           <Route
             path="/"

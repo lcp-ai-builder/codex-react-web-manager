@@ -15,6 +15,7 @@ import {
   Thead,
   Tr,
   useColorModeValue,
+  Spinner,
   Tooltip,
   useDisclosure,
   Modal,
@@ -33,6 +34,7 @@ const TradeQueryPage = () => {
   const zebra = useColorModeValue('gray.50', 'gray.700');
   const textColor = useColorModeValue('blue.600', 'blue.100');
   const headerHover = useColorModeValue('blue.50', 'blue.900');
+  const overlayBg = useColorModeValue('whiteAlpha.800', 'blackAlpha.600');
   const [sortOrder, setSortOrder] = useState(null);
   const [tradeIdQuery, setTradeIdQuery] = useState('');
   const [userIdQuery, setUserIdQuery] = useState('');
@@ -99,11 +101,10 @@ const TradeQueryPage = () => {
   }, [sortOrder, trades]);
 
   const visibleRows = useMemo(() => {
-    if (loading) return [];
     const limited = sortedOrders.slice(0, pageSize);
     const blanks = Math.max(pageSize - limited.length, 0);
     return [...limited, ...Array(blanks).fill(null)];
-  }, [loading, pageSize, sortedOrders]);
+  }, [pageSize, sortedOrders]);
 
   const pageNumbers = useMemo(() => {
     const windowSize = 5;
@@ -187,25 +188,20 @@ const TradeQueryPage = () => {
           {error}
         </Box>
       )}
-      <TableContainer>
-        <Table variant="simple">
-          <Thead>
-            <Tr>
-              <Th>交易编号</Th>
-              <Th>交易人ID</Th>
-              <Th cursor="pointer" onClick={() => setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))} _hover={{ bg: headerHover }}>
-                成交时间 {sortOrder ? (sortOrder === 'asc' ? '▲' : '▼') : ''}
-              </Th>
-            </Tr>
-          </Thead>
-          <Tbody>
-            {loading && (
+      <Box position="relative">
+        <TableContainer>
+          <Table variant="simple">
+            <Thead>
               <Tr>
-                <Td colSpan={3}>查询中...</Td>
+                <Th>交易编号</Th>
+                <Th>交易人ID</Th>
+                <Th cursor="pointer" onClick={() => setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))} _hover={{ bg: headerHover }}>
+                  成交时间 {sortOrder ? (sortOrder === 'asc' ? '▲' : '▼') : ''}
+                </Th>
               </Tr>
-            )}
-            {!loading &&
-              visibleRows.map((trade, index) => {
+            </Thead>
+            <Tbody>
+              {visibleRows.map((trade, index) => {
                 if (!trade) {
                   return (
                     <Tr key={`placeholder-${index}`} bg={index % 2 === 1 ? zebra : 'transparent'}>
@@ -234,9 +230,22 @@ const TradeQueryPage = () => {
                   </Tr>
                 );
               })}
-          </Tbody>
-        </Table>
-      </TableContainer>
+            </Tbody>
+          </Table>
+        </TableContainer>
+        {loading && (
+          <Flex
+            position="absolute"
+            inset={0}
+            align="center"
+            justify="center"
+            bg={overlayBg}
+            pointerEvents="none"
+          >
+            <Spinner size="lg" color="teal.400" thickness="3px" />
+          </Flex>
+        )}
+      </Box>
       <Flex mt={4} align="center" justify="space-between" gap={3} flexWrap="wrap">
         <Flex align="center" gap={2}>
           <Text>每页</Text>

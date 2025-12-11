@@ -3,6 +3,8 @@ import react from '@vitejs/plugin-react';
 import { fileURLToPath, URL } from 'node:url';
 
 export default defineConfig({
+  // 让构建产物可以挂载在 /trade-manager 子路径下
+  base: '/trade-manager/',
   plugins: [react()],
   resolve: {
     alias: {
