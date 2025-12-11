@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Avatar, Box, Button, Collapse, Flex, Heading, Icon, IconButton, List, ListItem, Text, VStack, useColorMode, useColorModeValue } from '@chakra-ui/react';
+import { Avatar, Box, Button, Collapse, Flex, Heading, Icon, IconButton, List, ListItem, Select, Text, VStack, useColorMode, useColorModeValue } from '@chakra-ui/react';
 import {
   FiHome,
   FiUsers,
@@ -22,12 +22,21 @@ import {
   FiSearch,
 } from 'react-icons/fi';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import useAuthStore from '@/store/useAuthStore.js';
 
 const accentPalette = ['teal.400', 'orange.400', 'purple.400', 'blue.400', 'pink.400', 'green.400'];
 const getAccent = (seed = 0) => accentPalette[Math.abs(seed) % accentPalette.length];
+const MENU_KEYS = {
+  dashboard: 'dashboard',
+  users: 'users',
+  trades: 'trades',
+  systemMaintenance: 'systemMaintenance',
+  logs: 'logs',
+};
 
 const HomePage = () => {
+  const { t, i18n } = useTranslation();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -41,18 +50,20 @@ const HomePage = () => {
   }, [currentUser?.rootMenus]);
   const canSeeSystemMaintenance = isAdmin || (Array.isArray(allowedRootMenus) && allowedRootMenus.includes('/home/system'));
   const canSeeSystemLogs = isAdmin || (Array.isArray(allowedRootMenus) && allowedRootMenus.includes('/home/system/logs'));
-  const [openMenus, setOpenMenus] = useState({
-    用户管理: true,
-    交易信息: true,
-    ...(canSeeSystemMaintenance ? { 系统维护: true } : {}),
-    ...(canSeeSystemLogs ? { 日志信息: true } : {}),
+  const getInitialOpenMenus = () => ({
+    [MENU_KEYS.users]: true,
+    [MENU_KEYS.trades]: true,
+    ...(canSeeSystemMaintenance ? { [MENU_KEYS.systemMaintenance]: true } : {}),
+    ...(canSeeSystemLogs ? { [MENU_KEYS.logs]: true } : {}),
   });
+  const [openMenus, setOpenMenus] = useState(getInitialOpenMenus);
   const pageBg = useColorModeValue('gray.100', 'gray.900');
   const sidebarBg = useColorModeValue('white', 'gray.800');
   const headerBg = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
   const textMuted = useColorModeValue('gray.600', 'gray.400');
   const currentRoleName = typeof currentUser?.roleName === 'string' ? currentUser.roleName.trim() : '';
+  const currentLanguage = i18n.language;
   const menuHover = useColorModeValue({ bg: 'teal.100', color: 'teal.700' }, { bg: 'teal.800', color: 'teal.100' });
   const handleLogout = () => {
     clearAuth();
@@ -60,61 +71,60 @@ const HomePage = () => {
   };
 
   useEffect(() => {
-    setOpenMenus({
-      用户管理: true,
-      交易信息: true,
-      ...(canSeeSystemMaintenance ? { 系统维护: true } : {}),
-      ...(canSeeSystemLogs ? { 日志信息: true } : {}),
-    });
+    setOpenMenus(getInitialOpenMenus());
   }, [canSeeSystemLogs, canSeeSystemMaintenance]);
 
   const baseMenuItems = useMemo(
     () => [
-      { icon: FiHome, label: '仪表盘', path: '/home' },
+      { id: MENU_KEYS.dashboard, icon: FiHome, label: t('menu.dashboard'), path: '/home' },
       {
+        id: MENU_KEYS.users,
         icon: FiUsers,
-        label: '用户管理',
+        label: t('menu.users'),
         rootPath: '/home/users',
         children: [
-          { icon: FiUser, label: '普通用户', path: '/home/users/regular' },
-          { icon: FiStar, label: 'VIP用户' },
+          { id: `${MENU_KEYS.users}-regular`, icon: FiUser, label: t('menu.regularUsers'), path: '/home/users/regular' },
+          { id: `${MENU_KEYS.users}-vip`, icon: FiStar, label: t('menu.vipUsers') },
         ],
       },
       {
+        id: MENU_KEYS.trades,
         icon: FiShoppingBag,
-        label: '交易信息',
+        label: t('menu.trades'),
         rootPath: '/home/trades',
         children: [
-          { icon: FiList, label: '交易概览', path: '/home/trades/overview' },
-          { icon: FiSearch, label: '交易查询', path: '/home/trades/query' },
+          { id: `${MENU_KEYS.trades}-overview`, icon: FiList, label: t('menu.tradeOverview'), path: '/home/trades/overview' },
+          { id: `${MENU_KEYS.trades}-query`, icon: FiSearch, label: t('menu.tradeQuery'), path: '/home/trades/query' },
         ],
       },
     ],
-    []
+    [t]
   );
 
   const adminMenu = useMemo(
     () => ({
+      id: MENU_KEYS.systemMaintenance,
       icon: FiTool,
-      label: '系统维护',
+      label: t('menu.systemMaintenance'),
       rootPath: '/home/system',
       children: [
-        { icon: FiUserCheck, label: '操作员管理', path: '/home/system/operator' },
-        { icon: FiKey, label: '角色管理', path: '/home/system/roles' },
-        { icon: FiLock, label: '修改密码', path: '/home/system/password' },
+        { id: `${MENU_KEYS.systemMaintenance}-operator`, icon: FiUserCheck, label: t('menu.operator'), path: '/home/system/operator' },
+        { id: `${MENU_KEYS.systemMaintenance}-roles`, icon: FiKey, label: t('menu.roles'), path: '/home/system/roles' },
+        { id: `${MENU_KEYS.systemMaintenance}-password`, icon: FiLock, label: t('menu.password'), path: '/home/system/password' },
       ],
     }),
-    []
+    [t]
   );
 
   const systemLogMenu = useMemo(
     () => ({
+      id: MENU_KEYS.logs,
       icon: FiActivity,
-      label: '日志信息',
+      label: t('menu.logs'),
       rootPath: '/home/system/logs',
-      children: [{ icon: FiActivity, label: '操作日志', path: '/home/system/logs' }],
+      children: [{ id: `${MENU_KEYS.logs}-operation`, icon: FiActivity, label: t('menu.operationLogs'), path: '/home/system/logs' }],
     }),
-    []
+    [t]
   );
 
   const shouldIncludeMenu = useCallback(
@@ -157,7 +167,7 @@ const HomePage = () => {
   }, [menuItems]);
 
   const currentPath = location.pathname.length > 1 && location.pathname.endsWith('/') ? location.pathname.slice(0, -1) : location.pathname;
-  const currentLabel = menuPathLabelMap[currentPath] ?? '仪表盘';
+  const currentLabel = menuPathLabelMap[currentPath] ?? t('menu.dashboard');
   const isActivePath = (path) => path && currentPath.startsWith(path);
 
   return (
@@ -168,9 +178,9 @@ const HomePage = () => {
           isCollapsed
             ? '76px'
             : {
-                base: 'clamp(160px, 44vw, 200px)',
-                md: 'clamp(180px, 24vw, 220px)',
-                lg: 'clamp(200px, 18vw, 240px)',
+                base: 'clamp(220px, 52vw, 270px)',
+                md: 'clamp(250px, 32vw, 300px)',
+                lg: 'clamp(270px, 24vw, 320px)',
               }
         }
         bg={sidebarBg}
@@ -204,18 +214,19 @@ const HomePage = () => {
         <List spacing={2}>
           {menuItems.map((item, index) => {
             const hasChildren = Boolean(item.children?.length);
-            const isOpen = openMenus[item.label];
+            const menuKey = item.id || item.label;
+            const isOpen = openMenus[menuKey];
 
             const handleToggle = () => {
               if (!hasChildren || isCollapsed) return;
               setOpenMenus((prev) => ({
                 ...prev,
-                [item.label]: !prev[item.label],
+                [menuKey]: !prev[menuKey],
               }));
             };
 
             return (
-              <Box key={item.label}>
+              <Box key={menuKey}>
                 <ListItem
                   display="flex"
                   alignItems="center"
@@ -245,7 +256,7 @@ const HomePage = () => {
                     <List spacing={1} mt={1} pl={7}>
                       {item.children.map((child, childIndex) => (
                         <ListItem
-                          key={child.label}
+                          key={child.id || child.label}
                           display="flex"
                           alignItems="center"
                           gap={3}
@@ -273,8 +284,18 @@ const HomePage = () => {
       {/* 右侧主区域：顶部固定，下面 Outlet 滚动 */}
       <Flex direction="column" flex="1" minH="100vh" overflow="hidden">
         <Flex as="header" h="72px" px={8} align="center" justify="space-between" bg={headerBg} borderBottom="1px solid" borderColor={borderColor} position="sticky" top={0} zIndex={1}>
-          <Heading size="md">当前位置：{currentLabel}</Heading>
+          <Heading size="md">{t('menu.location', { label: currentLabel })}</Heading>
           <Flex align="center" gap={4}>
+            <Select
+              size="sm"
+              value={currentLanguage}
+              onChange={(e) => i18n.changeLanguage(e.target.value)}
+              w="110px"
+              variant="outline"
+            >
+              <option value="en">{t('language.en')}</option>
+              <option value="zh-CN">{t('language.zh')}</option>
+            </Select>
             <IconButton aria-label="切换配色模式" icon={colorMode === 'light' ? <FiMoon /> : <FiSun />} onClick={toggleColorMode} variant="ghost" colorScheme="teal" />
             <Avatar size="sm" name={currentUser?.name || currentUser?.id} />
             <VStack spacing={0} align="flex-start">
@@ -286,7 +307,7 @@ const HomePage = () => {
               ) : null}
             </VStack>
             <Button leftIcon={<FiLogOut />} variant="outline" colorScheme="teal" onClick={handleLogout}>
-              退出
+              {t('action.logout')}
             </Button>
           </Flex>
         </Flex>

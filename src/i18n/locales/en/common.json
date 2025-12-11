@@ -1,0 +1,35 @@
+{
+  "menu": {
+    "dashboard": "Dashboard",
+    "users": "User Management",
+    "regularUsers": "Regular Users",
+    "vipUsers": "VIP Users",
+    "trades": "Trades",
+    "tradeOverview": "Trade Overview",
+    "tradeQuery": "Trade Query",
+    "systemMaintenance": "System Maintenance",
+    "logs": "Logs",
+    "operationLogs": "Operation Logs",
+    "operator": "Operator Management",
+    "roles": "Role Management",
+    "password": "Change Password",
+    "location": "Current: {{label}}"
+  },
+  "language": {
+    "zh": "中文",
+    "en": "EN"
+  },
+  "action": {
+    "logout": "Logout"
+  },
+  "table": {
+    "noData": "No data"
+  },
+  "pagination": {
+    "pageSummary": "Page {{current}} of {{total}}",
+    "withTotals": " · {{pageSize}} per page · {{totalItems}} total",
+    "loading": " · Loading...",
+    "prev": "Previous",
+    "next": "Next"
+  }
+}

@@ -1,7 +1,9 @@
 import { Box, Flex, Table, TableContainer, Tbody, Td, Th, Thead, Tr, useColorModeValue, Heading, Button } from '@chakra-ui/react';
+import { useTranslation } from 'react-i18next';
 import Pagination from './Pagination.jsx';
 
 const DataTable = ({ columns = [], data = [], rowKey = 'id', pagination, containerProps = {}, tableProps = {}, title, headerIcon: HeaderIcon, addText, addIcon: AddIcon, onAdd, getRowProps }) => {
+  const { t } = useTranslation();
   const tableBg = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
   const zebraBg = useColorModeValue('gray.50', 'gray.700');
@@ -41,7 +43,7 @@ const DataTable = ({ columns = [], data = [], rowKey = 'id', pagination, contain
             {data.length === 0 ? (
               <Tr>
                 <Td colSpan={emptyColSpan} textAlign="center">
-                  暂无数据
+                  {t('table.noData')}
                 </Td>
               </Tr>
             ) : (

@@ -4,6 +4,7 @@ import { ChakraProvider, ColorModeScript, extendTheme } from '@chakra-ui/react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import App from '@/App.jsx';
 import useAuthStore from '@/store/useAuthStore.js';
+import '@/i18n/index.js';
 import sourceHanSans from '@/assets/fonts/SourceHanSansSC-Normal.otf';
 
 // 全局主题：配置初始配色方案，后续 Chakra 组件都会遵守
