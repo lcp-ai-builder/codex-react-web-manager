@@ -23,6 +23,9 @@
     "logout": "退出",
     "search": "查询"
   },
+  "app": {
+    "title": "管理后台"
+  },
   "table": {
     "noData": "暂无数据"
   },

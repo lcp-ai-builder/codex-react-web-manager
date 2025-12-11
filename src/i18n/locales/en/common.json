@@ -23,6 +23,9 @@
     "logout": "Logout",
     "search": "Search"
   },
+  "app": {
+    "title": "Admin Console"
+  },
   "table": {
     "noData": "No data"
   },
