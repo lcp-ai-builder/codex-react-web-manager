@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Box, Button, Flex, IconButton, Input, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, Text, useDisclosure, useToast } from '@chakra-ui/react';
-import { FiKey, FiRefreshCcw } from 'react-icons/fi';
+import { FiKey, FiTool } from 'react-icons/fi';
 import DataTable from '@/components/DataTable.jsx';
 import { fetchOperators, resetOperatorPassword } from '@/services/manager-service.js';
 import { hashPassword } from '@/components/hash-password';
@@ -54,7 +54,7 @@ const ResetPasswordPage = () => {
         render: (op) => (
           <IconButton
             aria-label="重置密码"
-            icon={<FiRefreshCcw />}
+            icon={<FiTool />}
             size="sm"
             variant="ghost"
             title="重置密码"

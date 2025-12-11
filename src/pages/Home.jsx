@@ -45,13 +45,14 @@ const HomePage = () => {
     用户管理: true,
     交易信息: true,
     ...(canSeeSystemMaintenance ? { 系统维护: true } : {}),
-    ...(canSeeSystemLogs ? { 系统日志信息: true } : {}),
+    ...(canSeeSystemLogs ? { 日志信息: true } : {}),
   });
   const pageBg = useColorModeValue('gray.100', 'gray.900');
   const sidebarBg = useColorModeValue('white', 'gray.800');
   const headerBg = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
   const textMuted = useColorModeValue('gray.600', 'gray.400');
+  const currentRoleName = typeof currentUser?.roleName === 'string' ? currentUser.roleName.trim() : '';
   const menuHover = useColorModeValue({ bg: 'teal.100', color: 'teal.700' }, { bg: 'teal.800', color: 'teal.100' });
   const handleLogout = () => {
     clearAuth();
@@ -63,7 +64,7 @@ const HomePage = () => {
       用户管理: true,
       交易信息: true,
       ...(canSeeSystemMaintenance ? { 系统维护: true } : {}),
-      ...(canSeeSystemLogs ? { 系统日志信息: true } : {}),
+      ...(canSeeSystemLogs ? { 日志信息: true } : {}),
     });
   }, [canSeeSystemLogs, canSeeSystemMaintenance]);
 
@@ -109,7 +110,7 @@ const HomePage = () => {
   const systemLogMenu = useMemo(
     () => ({
       icon: FiActivity,
-      label: '系统日志信息',
+      label: '日志信息',
       rootPath: '/home/system/logs',
       children: [{ icon: FiActivity, label: '操作日志', path: '/home/system/logs' }],
     }),
@@ -129,11 +130,11 @@ const HomePage = () => {
   // 左侧菜单定义：支持多级、图标和路由跳转；基于 root_menus 做过滤
   const menuItems = useMemo(() => {
     const items = baseMenuItems.filter(shouldIncludeMenu);
-    if (canSeeSystemMaintenance && shouldIncludeMenu(adminMenu)) {
-      items.push(adminMenu);
-    }
     if (canSeeSystemLogs && shouldIncludeMenu(systemLogMenu)) {
       items.push(systemLogMenu);
+    }
+    if (canSeeSystemMaintenance && shouldIncludeMenu(adminMenu)) {
+      items.push(adminMenu);
     }
     return items;
   }, [adminMenu, baseMenuItems, canSeeSystemLogs, canSeeSystemMaintenance, shouldIncludeMenu, systemLogMenu]);
@@ -278,9 +279,11 @@ const HomePage = () => {
             <Avatar size="sm" name={currentUser?.name || currentUser?.id} />
             <VStack spacing={0} align="flex-start">
               <Text fontWeight="medium">{currentUser?.name || currentUser?.id || '未登录用户'}</Text>
-              <Text fontSize="sm" color={textMuted}>
-                {currentUser?.email || 'admin@example.com'}
-              </Text>
+              {currentRoleName ? (
+                <Text fontSize="sm" color={textMuted}>
+                  {currentRoleName}
+                </Text>
+              ) : null}
             </VStack>
             <Button leftIcon={<FiLogOut />} variant="outline" colorScheme="teal" onClick={handleLogout}>
               退出
