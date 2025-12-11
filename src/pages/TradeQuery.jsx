@@ -3,10 +3,7 @@ import {
   Box,
   Button,
   Flex,
-  FormControl,
-  FormLabel,
   Input,
-  Select,
   Table,
   TableContainer,
   Tbody,
@@ -27,10 +24,9 @@ import {
   ModalFooter,
   Text,
 } from '@chakra-ui/react';
+import SearchTableLayout from '@/components/SearchTableLayout.jsx';
 
 const TradeQueryPage = () => {
-  const cardBg = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
   const zebra = useColorModeValue('gray.50', 'gray.700');
   const textColor = useColorModeValue('blue.600', 'blue.100');
   const headerHover = useColorModeValue('blue.50', 'blue.900');
@@ -50,7 +46,6 @@ const TradeQueryPage = () => {
   const [pageSize, setPageSize] = useState(5);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
-  const [pageInput, setPageInput] = useState('1');
 
   const handlePageChange = useCallback(
     (nextPage) => {
@@ -106,31 +101,15 @@ const TradeQueryPage = () => {
     return [...limited, ...Array(blanks).fill(null)];
   }, [pageSize, sortedOrders]);
 
-  const pageNumbers = useMemo(() => {
-    const windowSize = 5;
-    if (!totalPages) return [];
-    let start = Math.max(1, page - Math.floor(windowSize / 2));
-    let end = Math.min(totalPages, start + windowSize - 1);
-    if (end - start + 1 < windowSize) {
-      start = Math.max(1, end - windowSize + 1);
-    }
-    return Array.from({ length: end - start + 1 }, (_, index) => start + index);
-  }, [page, totalPages]);
-
   useEffect(() => {
     fetchTrades();
   }, [fetchTrades]);
-
-  useEffect(() => {
-    setPageInput(String(page));
-  }, [page]);
 
   useEffect(() => {
     if (page > totalPages) {
       setPage(totalPages);
     }
   }, [page, totalPages]);
-
 
   const formatTime = (timestamp) => {
     if (!timestamp) return '-';
@@ -139,176 +118,121 @@ const TradeQueryPage = () => {
     return date.toLocaleString();
   };
 
-  return (
-    <Box bg={cardBg} borderRadius="lg" boxShadow="sm" border="1px solid" borderColor={borderColor} p={6} color={textColor}>
-      <Flex justify="space-between" align="flex-end" mb={4} gap={3} flexWrap="nowrap">
-        <Flex gap={3} align="center" flexWrap="nowrap">
-          <FormControl minW="260px" display="flex" alignItems="center" gap={2}>
-            <FormLabel mb={0} whiteSpace="nowrap">
-              交易编号
-            </FormLabel>
-            <Input size="sm" placeholder="输入交易编号" value={tradeIdQuery} onChange={(event) => setTradeIdQuery(event.target.value)} />
-          </FormControl>
-          <FormControl minW="260px" display="flex" alignItems="center" gap={2}>
-            <FormLabel mb={0} whiteSpace="nowrap">
-              交易人ID
-            </FormLabel>
-            <Input size="sm" placeholder="输入交易人ID" value={userIdQuery} onChange={(event) => setUserIdQuery(event.target.value)} />
-          </FormControl>
-          <FormControl minW="260px" display="flex" alignItems="center" gap={2}>
-            <FormLabel mb={0} whiteSpace="nowrap">
-              备注关键词
-            </FormLabel>
-            <Input size="sm" placeholder="输入备注关键词" value={notesKeyword} onChange={(event) => setNotesKeyword(event.target.value)} />
-          </FormControl>
-          <FormControl minW="260px" display="flex" alignItems="center" gap={2}>
-            <Button
-              size="sm"
-              colorScheme="teal"
-              onClick={() => {
-                setPage(1);
-                setFilters({
-                  tradeId: tradeIdQuery.trim(),
-                  userId: userIdQuery.trim(),
-                  notesKeyword: notesKeyword.trim(),
-                });
-              }}
-            >
-              查询
-            </Button>
-          </FormControl>
-        </Flex>
+  const filterItems = useMemo(
+    () => [
+      {
+        key: 'tradeId',
+        label: '交易编号',
+        render: () => <Input size="sm" placeholder="输入交易编号" value={tradeIdQuery} onChange={(event) => setTradeIdQuery(event.target.value)} />,
+        minW: '260px',
+      },
+      {
+        key: 'userId',
+        label: '交易人ID',
+        render: () => <Input size="sm" placeholder="输入交易人ID" value={userIdQuery} onChange={(event) => setUserIdQuery(event.target.value)} />,
+        minW: '260px',
+      },
+      {
+        key: 'notesKeyword',
+        label: '备注关键词',
+        render: () => <Input size="sm" placeholder="输入备注关键词" value={notesKeyword} onChange={(event) => setNotesKeyword(event.target.value)} />,
+        minW: '260px',
+      },
+    ],
+    [notesKeyword, tradeIdQuery, userIdQuery]
+  );
 
-        <Button size="sm" variant="ghost" onClick={() => setSortOrder(null)}>
-          恢复默认排序
-        </Button>
-      </Flex>
-      {error && (
-        <Box mb={3} color="red.400">
-          {error}
-        </Box>
-      )}
-      <Box position="relative">
-        <TableContainer>
-          <Table variant="simple">
-            <Thead>
-              <Tr>
-                <Th>交易编号</Th>
-                <Th>交易人ID</Th>
-                <Th cursor="pointer" onClick={() => setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))} _hover={{ bg: headerHover }}>
-                  成交时间 {sortOrder ? (sortOrder === 'asc' ? '▲' : '▼') : ''}
-                </Th>
+  const handleSearch = useCallback(() => {
+    setPage(1);
+    setFilters({
+      tradeId: tradeIdQuery.trim(),
+      userId: userIdQuery.trim(),
+      notesKeyword: notesKeyword.trim(),
+    });
+  }, [notesKeyword, tradeIdQuery, userIdQuery]);
+
+  const tableContent = (
+    <TableContainer>
+      <Table variant="simple">
+        <Thead>
+          <Tr>
+            <Th>交易编号</Th>
+            <Th>交易人ID</Th>
+            <Th cursor="pointer" onClick={() => setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))} _hover={{ bg: headerHover }}>
+              成交时间 {sortOrder ? (sortOrder === 'asc' ? '▲' : '▼') : ''}
+            </Th>
+          </Tr>
+        </Thead>
+        <Tbody>
+          {visibleRows.map((trade, index) => {
+            if (!trade) {
+              return (
+                <Tr key={`placeholder-${index}`} bg={index % 2 === 1 ? zebra : 'transparent'}>
+                  <Td>&nbsp;</Td>
+                  <Td>&nbsp;</Td>
+                  <Td>&nbsp;</Td>
+                </Tr>
+              );
+            }
+            return (
+              <Tr key={trade.tradeId || trade.id || index} bg={index % 2 === 1 ? zebra : 'transparent'}>
+                <Td
+                  color="teal.500"
+                  cursor="pointer"
+                  onClick={() => {
+                    setDetailTarget(trade);
+                    onDetailOpen();
+                  }}
+                >
+                  <Tooltip label="查看完整交易信息" hasArrow>
+                    <Text>{trade.tradeId || trade.id || '-'}</Text>
+                  </Tooltip>
+                </Td>
+                <Td>{trade.userId || '-'}</Td>
+                <Td>{formatTime(trade.executedAt || trade.createdAt)}</Td>
               </Tr>
-            </Thead>
-            <Tbody>
-              {visibleRows.map((trade, index) => {
-                if (!trade) {
-                  return (
-                    <Tr key={`placeholder-${index}`} bg={index % 2 === 1 ? zebra : 'transparent'}>
-                      <Td>&nbsp;</Td>
-                      <Td>&nbsp;</Td>
-                      <Td>&nbsp;</Td>
-                    </Tr>
-                  );
-                }
-                return (
-                  <Tr key={trade.tradeId || trade.id || index} bg={index % 2 === 1 ? zebra : 'transparent'}>
-                    <Td
-                      color="teal.500"
-                      cursor="pointer"
-                      onClick={() => {
-                        setDetailTarget(trade);
-                        onDetailOpen();
-                      }}
-                    >
-                      <Tooltip label="查看完整交易信息" hasArrow>
-                        <Text>{trade.tradeId || trade.id || '-'}</Text>
-                      </Tooltip>
-                    </Td>
-                    <Td>{trade.userId || '-'}</Td>
-                    <Td>{formatTime(trade.executedAt || trade.createdAt)}</Td>
-                  </Tr>
-                );
-              })}
-            </Tbody>
-          </Table>
-        </TableContainer>
-        {loading && (
-          <Flex
-            position="absolute"
-            inset={0}
-            align="center"
-            justify="center"
-            bg={overlayBg}
-            pointerEvents="none"
-          >
-            <Spinner size="lg" color="teal.400" thickness="3px" />
-          </Flex>
-        )}
-      </Box>
-      <Flex mt={4} align="center" justify="space-between" gap={3} flexWrap="wrap">
-        <Flex align="center" gap={2}>
-          <Text>每页</Text>
-          <Select
-            size="sm"
-            w="80px"
-            value={pageSize}
-            onChange={(event) => {
-              setPageSize(Number(event.target.value));
-              setPage(1);
-            }}
-          >
-            {[5, 10, 20, 50, 100].map((size) => (
-              <option key={size} value={size}>
-                {size}
-              </option>
-            ))}
-          </Select>
-          <Text>条 · 共 {totalCount} 条</Text>
-        </Flex>
-        <Flex align="center" gap={2} flexWrap="wrap">
-          <Button size="sm" onClick={() => handlePageChange(1)} isDisabled={page <= 1}>
-            首页
+            );
+          })}
+        </Tbody>
+      </Table>
+    </TableContainer>
+  );
+
+  return (
+    <>
+      <SearchTableLayout
+        filters={filterItems}
+        onSearch={handleSearch}
+        searchLabel="查询"
+        extraActions={
+          <Button size="sm" variant="ghost" onClick={() => setSortOrder(null)}>
+            恢复默认排序
           </Button>
-          <Button size="sm" onClick={() => handlePageChange(page - 1)} isDisabled={page <= 1}>
-            上一页
-          </Button>
-          <Text>
-            第 {page} / {totalPages} 页
-          </Text>
-          <Flex align="center" gap={1}>
-            {pageNumbers.map((num) => (
-              <Button key={num} size="sm" variant={num === page ? 'solid' : 'outline'} colorScheme="teal" onClick={() => handlePageChange(num)}>
-                {num}
-              </Button>
-            ))}
-          </Flex>
-          <Button size="sm" onClick={() => handlePageChange(page + 1)} isDisabled={page >= totalPages}>
-            下一页
-          </Button>
-          <Button size="sm" onClick={() => handlePageChange(totalPages)} isDisabled={page >= totalPages}>
-            末页
-          </Button>
-          <Flex align="center" gap={2}>
-            <Text>跳转到</Text>
-            <Input
-              size="sm"
-              w="80px"
-              type="number"
-              min={1}
-              value={pageInput}
-              onChange={(event) => setPageInput(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') {
-                  const target = Number(event.target.value);
-                  if (!Number.isNaN(target)) handlePageChange(target);
-                }
-              }}
-            />
-            <Text>页</Text>
-          </Flex>
-        </Flex>
-      </Flex>
+        }
+        table={tableContent}
+        paginationConfig={{
+          page,
+          totalPages,
+          totalCount,
+          pageSize,
+          pageSizeOptions: [5, 10, 20, 50, 100],
+          onPageChange: handlePageChange,
+          onPageSizeChange: (size) => {
+            setPageSize(size);
+            setPage(1);
+          },
+          isLoading: loading,
+        }}
+        overlay={
+          loading ? (
+            <Flex position="absolute" inset={0} align="center" justify="center" bg={overlayBg} pointerEvents="none">
+              <Spinner size="lg" color="teal.400" thickness="3px" />
+            </Flex>
+          ) : null
+        }
+        error={error}
+        cardProps={{ color: textColor }}
+      />
 
       <Modal isOpen={isDetailOpen} onClose={onDetailClose} isCentered size="xl">
         <ModalOverlay />
@@ -366,7 +290,7 @@ const TradeQueryPage = () => {
           </ModalFooter>
         </ModalContent>
       </Modal>
-    </Box>
+    </>
   );
 };
 
