@@ -1,8 +1,8 @@
 {
-  "editor.wordWrap": "wordWrapColumn",
-  "editor.wordWrapColumn": 200,
   "cSpell.enabled": false,
   "editor.fontFamily": "'Google Sans Code','Monaspace Neon',Monaco,'JetBrains Mono','WenQuanYi Micro Hei Mono','Microsoft YaHei','Fira Code', Consolas, 'Courier New', monospace",
+  "editor.wordWrap": "wordWrapColumn",
+  "editor.wordWrapColumn": 200,
   "eslint.enable": true,
   "explorer.fileNesting.enabled": true,
   "explorer.fileNesting.patterns": {
@@ -19,6 +19,7 @@
     "**/.idea": true,
     "**/.svn": true,
     "**/Thumbs.db": true,
+    "node_modules": true,
     "package-lock.json": true,
     "yarn.lock": true
   },
