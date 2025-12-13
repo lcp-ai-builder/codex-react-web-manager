@@ -1,3 +1,16 @@
+/**
+ * 角色管理页面组件
+ * 
+ * 功能说明：
+ * - 管理系统角色的增删改查
+ * - 支持角色启用/停用状态切换
+ * - 支持分页查询角色列表
+ * - 支持编辑角色信息（名称、标识、描述）
+ * 
+ * 权限要求：
+ * - 需要系统管理权限（/home/system）
+ * - 只有管理员可以访问
+ */
 import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   Badge,
@@ -34,7 +47,10 @@ import { fetchRoles as fetchRolesApi, createRole, updateRole, updateRoleIsOpen }
 import usePagedList from '@/hooks/usePagedList.js';
 import { isOpenEnabled } from '@/utils/status.js';
 
+// 分页大小常量
 const PAGE_SIZE = 10;
+
+// 状态颜色配置：启用状态显示绿色，停用状态显示灰色
 const statusColorScheme = {
   open: 'green',
   closed: 'gray',
@@ -96,13 +112,32 @@ const RolesPage = () => {
   const { isOpen: isAddOpen, onOpen: onAddOpen, onClose: onAddClose } = useDisclosure();
   const { isOpen: isEditOpen, onOpen: onEditOpen, onClose: onEditClose } = useDisclosure();
 
+  // ==================== 工具函数 ====================
+  /**
+   * 规范化启用状态值
+   * 用途：将各种可能的状态值统一转换为 1（启用）或 0（停用）
+   * @param {any} value - 原始状态值
+   * @returns {number} 1 表示启用，0 表示停用
+   */
   const normalizeIsOpen = (value) => (Number(value) === 1 ? 1 : 0);
 
+  // ==================== 事件处理函数 ====================
+  /**
+   * 处理分页切换
+   * 用途：用户点击分页按钮时，加载对应页面的角色数据
+   * @param {number} nextPage - 目标页码
+   */
   const handlePageChange = (nextPage) => {
     if (nextPage < 1 || nextPage > totalPages) return;
     loadPage(nextPage);
   };
 
+  /**
+   * 处理新建表单输入变化
+   * 用途：实时更新新建角色表单的数据
+   * 特殊处理：isOpen 字段需要转换为数字类型
+   * @param {Event} event - 输入事件对象
+   */
   const handleInputChange = (event) => {
     const { name, value } = event.target;
     const nextValue = name === 'isOpen' ? Number(value) : value;
@@ -112,6 +147,11 @@ const RolesPage = () => {
     }));
   };
 
+  /**
+   * 处理编辑表单输入变化
+   * 用途：实时更新编辑角色表单的数据
+   * @param {Event} event - 输入事件对象
+   */
   const handleEditInputChange = (event) => {
     const { name, value } = event.target;
     setEditFormData((prev) => ({
@@ -120,6 +160,10 @@ const RolesPage = () => {
     }));
   };
 
+  /**
+   * 打开新建角色弹窗
+   * 用途：重置表单数据并打开新建弹窗，确保每次打开都是干净的表单
+   */
   const handleOpenAdd = () => {
     setFormData({
       name: '',
@@ -130,6 +174,16 @@ const RolesPage = () => {
     onAddOpen();
   };
 
+  /**
+   * 保存新建的角色
+   * 用途：提交新建角色表单，创建新的角色
+   * 流程：
+   * 1. 表单验证（必填项、角色标识格式）
+   * 2. 发送创建请求到后端
+   * 3. 成功后更新本地列表并显示成功提示
+   * 4. 失败时显示错误提示
+   * 超时处理：3秒无响应自动取消请求
+   */
   const handleSave = async () => {
     if (!formData.name.trim() || !formData.code.trim()) {
       toast({
@@ -204,7 +258,11 @@ const RolesPage = () => {
     }
   };
 
-  // 打开编辑框时带入选中行数据，保持输入框受控
+  /**
+   * 打开编辑角色弹窗
+   * 用途：点击编辑按钮时，将选中角色的数据填充到编辑表单
+   * @param {Object} role - 要编辑的角色对象
+   */
   const handleOpenEdit = useCallback(
     (role) => {
       setEditFormData({
@@ -218,6 +276,17 @@ const RolesPage = () => {
     [onEditOpen]
   );
 
+  /**
+   * 更新角色信息
+   * 用途：提交编辑表单，更新角色的基本信息
+   * 流程：
+   * 1. 表单验证（必填项、角色标识格式）
+   * 2. 发送更新请求到后端
+   * 3. 成功后更新本地列表并显示成功提示
+   * 4. 失败时显示错误提示
+   * 可编辑字段：名称、标识、描述
+   * 超时处理：3秒无响应自动取消请求
+   */
   const handleUpdate = async () => {
     if (!editFormData.name.trim() || !editFormData.code.trim()) {
       toast({
@@ -287,15 +356,33 @@ const RolesPage = () => {
     }
   };
 
-  // 删除前先记录目标，弹出确认框避免误删
+  /**
+   * 切换角色启用/停用状态
+   * 用途：点击状态开关时，弹出确认对话框
+   * 逻辑：根据当前状态计算目标状态（启用变停用，停用变启用）
+   * @param {Object} role - 要切换状态的角色对象
+   */
   const handleToggleStatus = useCallback((role) => {
     const active = isOpenEnabled(role.isOpen ?? role.status);
     const nextIsOpen = active ? 0 : 1;
     setStatusConfirm({ isOpen: true, role, nextIsOpen });
   }, []);
 
+  /**
+   * 关闭状态确认对话框
+   * 用途：取消状态切换操作，重置确认对话框状态
+   */
   const closeStatusConfirm = () => setStatusConfirm({ isOpen: false, role: null, nextIsOpen: 1 });
 
+  /**
+   * 确认并执行状态切换
+   * 用途：在确认对话框中点击确认后，调用后端接口更新角色状态
+   * 流程：
+   * 1. 发送状态更新请求
+   * 2. 成功后更新本地列表中的角色状态
+   * 3. 显示成功提示并关闭确认对话框
+   * 超时处理：3秒无响应自动取消请求
+   */
   const handleConfirmStatus = async () => {
     if (!statusConfirm.role) return;
     setIsStatusUpdating(true);

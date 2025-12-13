@@ -1,3 +1,16 @@
+/**
+ * 普通用户管理页面组件
+ * 
+ * 功能说明：
+ * - 管理系统普通用户的增删改查
+ * - 支持分页查询用户列表
+ * - 支持添加新用户（姓名、邮箱、状态）
+ * - 支持编辑用户信息
+ * - 支持删除用户（带确认提示）
+ * 
+ * 权限要求：
+ * - 所有登录用户都可以访问
+ */
 import { useRef, useState } from 'react';
 // prettier-ignore
 import { AlertDialog, AlertDialogBody, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogOverlay, Badge, Box, Button, Flex, FormControl, FormLabel, Input, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, Select, Table, TableContainer, Tbody, Td, Th, Thead, Tr, useColorModeValue, useDisclosure, useToast, IconButton, HStack } from '@chakra-ui/react';
@@ -8,7 +21,8 @@ import { fetchUsers as fetchUsersApi, addUser, updateUser, deleteUser } from '@/
 import usePagedList from '@/hooks/usePagedList.js';
 import { isOpenEnabled } from '@/utils/status.js';
 
-const PAGE_SIZE = 10; // 统一设置分页大小，方便后续联动
+// 分页大小常量：统一设置，方便后续调整
+const PAGE_SIZE = 10;
 
 const RegularUsersPage = () => {
   const toast = useToast();
@@ -75,13 +89,22 @@ const RegularUsersPage = () => {
   const tableBg = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
 
-  // 切换分页时访问正式接口
+  // ==================== 事件处理函数 ====================
+  /**
+   * 处理分页切换
+   * 用途：用户点击分页按钮时，加载对应页面的用户数据
+   * @param {number} nextPage - 目标页码
+   */
   const handlePageChange = (nextPage) => {
     if (nextPage < 1 || nextPage > totalPages) return;
     loadPage(nextPage);
   };
 
-  // 实时收集表单输入
+  /**
+   * 处理新建表单输入变化
+   * 用途：实时更新新建用户表单的数据
+   * @param {Event} event - 输入事件对象
+   */
   const handleInputChange = (event) => {
     const { name, value } = event.target;
     setFormData((prev) => ({
@@ -90,7 +113,10 @@ const RegularUsersPage = () => {
     }));
   };
 
-  // 打开弹窗前重置表单，保持体验一致
+  /**
+   * 打开新建用户弹窗
+   * 用途：重置表单数据并打开新建弹窗，确保每次打开都是干净的表单
+   */
   const handleOpenModal = () => {
     setFormData({
       name: '',
@@ -100,7 +126,16 @@ const RegularUsersPage = () => {
     onAddOpen();
   };
 
-  // 保存数据：调用 /addNewUser 接口，并在 3 秒内无响应时给出提示
+  /**
+   * 保存新建的用户
+   * 用途：提交新建用户表单，创建新的用户账号
+   * 流程：
+   * 1. 表单验证（必填项、邮箱格式）
+   * 2. 发送创建请求到后端
+   * 3. 成功后更新本地列表（插入到顶部）并显示成功提示
+   * 4. 失败时显示错误提示
+   * 超时处理：3秒无响应自动取消请求
+   */
   const handleSave = async () => {
     // 表单验证：检查必填字段
     if (!formData.name.trim() || !formData.email.trim()) {
@@ -163,7 +198,13 @@ const RegularUsersPage = () => {
     }
   };
 
-  // 根据状态展示不同颜色的 Badge
+  // ==================== 渲染辅助函数 ====================
+  /**
+   * 渲染用户状态 Badge
+   * 用途：根据用户状态显示不同颜色的状态标签
+   * @param {any} status - 用户状态值
+   * @returns {JSX.Element} 状态 Badge 组件
+   */
   const renderStatus = (status) => {
     const active = isOpenEnabled(status);
     return (

@@ -1,3 +1,16 @@
+/**
+ * 操作员管理页面组件
+ * 
+ * 功能说明：
+ * - 管理系统操作员账号的增删改查
+ * - 支持操作员启用/停用状态切换
+ * - 支持分页查询操作员列表
+ * - 支持查看操作员详细信息
+ * - 支持编辑操作员基本信息（电话、邮箱、角色等）
+ * 
+ * 权限要求：
+ * - 需要系统管理权限（/home/system）
+ */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Badge,
@@ -37,7 +50,10 @@ import { fetchOperators, createOperator, updateOperator, fetchRoles as fetchRole
 import usePagedList from '@/hooks/usePagedList.js';
 import { isOpenEnabled } from '@/utils/status.js';
 
+// 分页大小常量
 const PAGE_SIZE = 10;
+
+// 状态颜色配置：启用状态显示绿色，停用状态显示灰色
 const statusColorScheme = {
   open: 'green',
   closed: 'gray',
@@ -105,9 +121,22 @@ const OperatorsPage = () => {
   const { isOpen: isAddOpen, onOpen: onAddOpen, onClose: onAddClose } = useDisclosure();
   const { isOpen: isEditOpen, onOpen: onEditOpen, onClose: onEditClose } = useDisclosure();
 
+  // ==================== 工具函数 ====================
+  /**
+   * 规范化启用状态值
+   * 用途：将各种可能的状态值统一转换为 1（启用）或 0（停用）
+   * @param {any} value - 原始状态值
+   * @returns {number} 1 表示启用，0 表示停用
+   */
   const normalizeIsOpen = (value) => (Number(value) === 1 ? 1 : 0);
 
-  // 角色选项：优先拉取后端
+  // ==================== 数据获取函数 ====================
+  /**
+   * 获取角色选项列表
+   * 用途：从后端获取所有角色，用于操作员表单中的角色下拉选择框
+   * 处理：兼容多种后端响应格式，统一转换为标准格式
+   * 错误处理：获取失败时设置为空数组，不影响页面正常显示
+   */
   const fetchRolesOptions = useCallback(async () => {
     try {
       const payload = await fetchRolesApi({ page: 1, pageSize: 100 });
@@ -135,21 +164,43 @@ const OperatorsPage = () => {
     }
   }, []);
 
+  // ==================== 副作用处理 ====================
+  /**
+   * 组件挂载时获取角色选项
+   * 依赖：fetchRolesOptions（使用 useCallback 包装，避免无限循环）
+   */
   useEffect(() => {
     fetchRolesOptions();
   }, [fetchRolesOptions]);
 
+  /**
+   * 当角色选项加载完成后，自动设置表单默认角色
+   * 用途：确保新建和编辑表单都有默认选中的角色
+   * 逻辑：如果表单中还没有选择角色，则自动选择第一个角色
+   */
   useEffect(() => {
     if (!rolesOptions[0]?.id) return;
     setFormData((prev) => (prev.roleId ? prev : { ...prev, roleId: rolesOptions[0].id }));
     setEditFormData((prev) => (prev.roleId ? prev : { ...prev, roleId: rolesOptions[0].id }));
   }, [rolesOptions]);
 
+  // ==================== 事件处理函数 ====================
+  /**
+   * 处理分页切换
+   * 用途：用户点击分页按钮时，加载对应页面的数据
+   * @param {number} nextPage - 目标页码
+   */
   const handlePageChange = (nextPage) => {
     if (nextPage < 1 || nextPage > totalPages) return;
     loadPage(nextPage);
   };
 
+  /**
+   * 处理新建表单输入变化
+   * 用途：实时更新新建操作员表单的数据
+   * 特殊处理：isOpen 字段需要转换为数字类型
+   * @param {Event} event - 输入事件对象
+   */
   const handleInputChange = (event) => {
     const { name, value } = event.target;
     const nextValue = name === 'isOpen' ? Number(value) : value;
@@ -159,6 +210,11 @@ const OperatorsPage = () => {
     }));
   };
 
+  /**
+   * 处理编辑表单输入变化
+   * 用途：实时更新编辑操作员表单的数据
+   * @param {Event} event - 输入事件对象
+   */
   const handleEditInputChange = (event) => {
     const { name, value } = event.target;
     setEditFormData((prev) => ({
@@ -167,6 +223,11 @@ const OperatorsPage = () => {
     }));
   };
 
+  /**
+   * 打开新建操作员弹窗
+   * 用途：重置表单数据并打开新建弹窗
+   * 自动生成：操作员编号自动生成（基于时间戳）
+   */
   const handleOpenAdd = () => {
     setFormData({
       operatorNo: `OP${String(Date.now()).slice(-5)}`,
@@ -181,8 +242,19 @@ const OperatorsPage = () => {
     onAddOpen();
   };
 
+  /**
+   * 保存新建的操作员
+   * 用途：提交新建操作员表单，创建新的操作员账号
+   * 流程：
+   * 1. 表单验证（必填项、电话格式、邮箱格式）
+   * 2. 发送创建请求到后端
+   * 3. 成功后更新本地列表并显示成功提示
+   * 4. 失败时显示错误提示
+   * 超时处理：3秒无响应自动取消请求
+   */
   const handleSave = async () => {
     const roleIdValue = formData.roleId ?? '';
+    // 步骤1：必填项验证
     if (
       !formData.operatorNo.trim() ||
       !formData.name.trim() ||
@@ -292,6 +364,12 @@ const OperatorsPage = () => {
     }
   };
 
+  /**
+   * 打开编辑操作员弹窗
+   * 用途：点击编辑按钮时，将选中操作员的数据填充到编辑表单
+   * 处理：兼容多种字段名称（operatorNo/operator_no/code），自动匹配角色ID
+   * @param {Object} operator - 要编辑的操作员对象
+   */
   const handleOpenEdit = useCallback(
     (operator) => {
       setEditFormData({
@@ -308,6 +386,11 @@ const OperatorsPage = () => {
     [onEditOpen, rolesOptions]
   );
 
+  /**
+   * 打开操作员详情弹窗
+   * 用途：点击查看按钮时，显示操作员的完整信息
+   * @param {Object} operator - 要查看的操作员对象
+   */
   const handleOpenDetail = useCallback(
     (operator) => {
       setDetailTarget(operator);
@@ -316,14 +399,33 @@ const OperatorsPage = () => {
     [onDetailOpen]
   );
 
+  /**
+   * 切换操作员启用/停用状态
+   * 用途：点击状态开关时，弹出确认对话框
+   * 逻辑：根据当前状态计算目标状态（启用变停用，停用变启用）
+   * @param {Object} operator - 要切换状态的操作员对象
+   */
   const handleToggleStatus = (operator) => {
     const active = isOpenEnabled(operator.isOpen ?? operator.status ?? 1);
     const nextIsOpen = active ? 0 : 1;
     setStatusConfirm({ isOpen: true, operator, nextIsOpen });
   };
 
+  /**
+   * 关闭状态确认对话框
+   * 用途：取消状态切换操作，重置确认对话框状态
+   */
   const closeStatusConfirm = () => setStatusConfirm({ isOpen: false, operator: null, nextIsOpen: 1 });
 
+  /**
+   * 确认并执行状态切换
+   * 用途：在确认对话框中点击确认后，调用后端接口更新操作员状态
+   * 流程：
+   * 1. 发送状态更新请求
+   * 2. 成功后更新本地列表中的操作员状态
+   * 3. 显示成功提示并关闭确认对话框
+   * 超时处理：3秒无响应自动取消请求
+   */
   const handleConfirmStatus = async () => {
     if (!statusConfirm.operator) return;
     setIsStatusUpdating(true);
@@ -370,6 +472,16 @@ const OperatorsPage = () => {
     }
   };
 
+  // ==================== 表格列配置 ====================
+  /**
+   * 数据表格列配置
+   * 用途：定义操作员列表表格的列结构、渲染方式和显示逻辑
+   * 包含列：
+   * - 编号、姓名、登录名、联系电话、电子邮箱、所属角色
+   * - 状态、创建时间、最后登录
+   * - 启用/停用开关、操作按钮（查看、编辑）
+   * 注意：部分列默认隐藏（visible: false），可通过表格配置显示
+   */
   const columns = useMemo(
     () => [
       {
@@ -453,7 +565,19 @@ const OperatorsPage = () => {
     [handleOpenDetail, handleOpenEdit, isStatusUpdating, mutedText, rolesOptions]
   );
 
+  /**
+   * 更新操作员信息
+   * 用途：提交编辑表单，更新操作员的基本信息
+   * 流程：
+   * 1. 表单验证（必填项、电话格式、邮箱格式）
+   * 2. 发送更新请求到后端
+   * 3. 成功后更新本地列表并显示成功提示
+   * 4. 失败时显示错误提示
+   * 可编辑字段：电话、邮箱、角色（编号、姓名、登录名不可编辑）
+   * 超时处理：3秒无响应自动取消请求
+   */
   const handleUpdate = async () => {
+    // 步骤1：必填项验证
     if (!editFormData.name.trim() || !editFormData.loginName.trim()) {
       toast({
         title: '请填写必填项',
@@ -545,8 +669,10 @@ const OperatorsPage = () => {
     }
   };
 
+  // ==================== 渲染组件 ====================
   return (
     <Box>
+      {/* 操作员列表数据表格 */}
       <DataTable
         columns={columns}
         data={operators}
