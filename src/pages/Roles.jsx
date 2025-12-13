@@ -41,6 +41,8 @@ const statusColorScheme = {
 };
 
 const RolesPage = () => {
+  const toast = useToast();
+
   // 角色数据与分页状态，数据来源后端
   const {
     items: roles,
@@ -93,7 +95,6 @@ const RolesPage = () => {
 
   const { isOpen: isAddOpen, onOpen: onAddOpen, onClose: onAddClose } = useDisclosure();
   const { isOpen: isEditOpen, onOpen: onEditOpen, onClose: onEditClose } = useDisclosure();
-  const toast = useToast();
 
   const normalizeIsOpen = (value) => (Number(value) === 1 ? 1 : 0);
 
@@ -130,7 +131,29 @@ const RolesPage = () => {
   };
 
   const handleSave = async () => {
-    if (!formData.name.trim() || !formData.code.trim()) return;
+    if (!formData.name.trim() || !formData.code.trim()) {
+      toast({
+        title: '请填写必填项',
+        status: 'warning',
+        position: 'top',
+        duration: 2500,
+        isClosable: true,
+      });
+      return;
+    }
+    // 角色标识格式验证（只允许字母、数字、下划线、连字符）
+    const codeRegex = /^[a-zA-Z0-9_-]+$/;
+    if (!codeRegex.test(formData.code.trim())) {
+      toast({
+        title: '角色标识只能包含字母、数字、下划线和连字符',
+        status: 'warning',
+        position: 'top',
+        duration: 2500,
+        isClosable: true,
+      });
+      return;
+    }
+
     const payloadData = { ...formData, isOpen: normalizeIsOpen(formData.isOpen) };
     setIsSaving(true);
     const controller = new AbortController();
@@ -138,6 +161,10 @@ const RolesPage = () => {
 
     try {
       const payload = await createRole({ data: payloadData, signal: controller.signal });
+      // 检查请求是否已被取消
+      if (controller.signal.aborted) {
+        return;
+      }
 
       const roleFromApi = payload?.data && typeof payload.data === 'object' ? payload.data : payload && typeof payload === 'object' ? payload : null;
       const newRole =
@@ -159,6 +186,10 @@ const RolesPage = () => {
         isClosable: true,
       });
     } catch (error) {
+      // 如果请求被取消，不显示错误提示
+      if (controller.signal.aborted && error.name === 'AbortError') {
+        return;
+      }
       console.warn('新增角色失败：', error);
       toast({
         title: '新增角色失败',
@@ -188,7 +219,29 @@ const RolesPage = () => {
   );
 
   const handleUpdate = async () => {
-    if (!editFormData.name.trim() || !editFormData.code.trim()) return;
+    if (!editFormData.name.trim() || !editFormData.code.trim()) {
+      toast({
+        title: '请填写必填项',
+        status: 'warning',
+        position: 'top',
+        duration: 2500,
+        isClosable: true,
+      });
+      return;
+    }
+    // 角色标识格式验证
+    const codeRegex = /^[a-zA-Z0-9_-]+$/;
+    if (!codeRegex.test(editFormData.code.trim())) {
+      toast({
+        title: '角色标识只能包含字母、数字、下划线和连字符',
+        status: 'warning',
+        position: 'top',
+        duration: 2500,
+        isClosable: true,
+      });
+      return;
+    }
+
     setIsUpdating(true);
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3000);
@@ -198,6 +251,10 @@ const RolesPage = () => {
         data: editFormData,
         signal: controller.signal,
       });
+      // 检查请求是否已被取消
+      if (controller.signal.aborted) {
+        return;
+      }
 
       const updatedRole = payload?.data && typeof payload.data === 'object' ? payload.data : payload && typeof payload === 'object' ? payload : null;
       const mergedRole = updatedRole ? { ...editFormData, ...updatedRole } : editFormData;
@@ -212,6 +269,10 @@ const RolesPage = () => {
         isClosable: true,
       });
     } catch (error) {
+      // 如果请求被取消，不显示错误提示
+      if (controller.signal.aborted && error.name === 'AbortError') {
+        return;
+      }
       console.warn('更新角色失败：', error);
       toast({
         title: '更新角色失败',
@@ -246,6 +307,10 @@ const RolesPage = () => {
         isOpen: statusConfirm.nextIsOpen,
         signal: controller.signal,
       });
+      // 检查请求是否已被取消
+      if (controller.signal.aborted) {
+        return;
+      }
       const returnedRole = payload?.data && typeof payload.data === 'object' ? payload.data : payload && typeof payload === 'object' ? payload : null;
       const merged = returnedRole ? { ...statusConfirm.role, ...returnedRole } : { ...statusConfirm.role, isOpen: statusConfirm.nextIsOpen };
 
@@ -258,6 +323,10 @@ const RolesPage = () => {
         isClosable: true,
       });
     } catch (error) {
+      // 如果请求被取消，不显示错误提示
+      if (controller.signal.aborted && error.name === 'AbortError') {
+        return;
+      }
       console.warn('更新角色状态失败：', error);
       toast({
         title: '更新角色状态失败',

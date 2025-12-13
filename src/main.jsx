@@ -35,6 +35,16 @@ const theme = extendTheme({
 // React18 新的渲染方式，包裹 Chakra Provider 和路由
 const routerBase = (import.meta.env.BASE_URL || '/').replace(/\/$/, '');
 
+// 根路径重定向组件：根据认证状态决定跳转到登录页还是首页
+// 使用组件而非立即执行函数，避免每次渲染都重新执行
+const RootRedirect = () => {
+  const { token, currentUser } = useAuthStore.getState();
+  if (token && currentUser) {
+    return <Navigate to="/home" replace />;
+  }
+  return <Navigate to="/login" replace />;
+};
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <ChakraProvider theme={theme}>
@@ -45,13 +55,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <Routes>
           <Route
             path="/"
-            element={(() => {
-              const { token, currentUser } = useAuthStore.getState();
-              if (token && currentUser) {
-                return <Navigate to="/home" replace />;
-              }
-              return <Navigate to="/login" replace />;
-            })()}
+            element={<RootRedirect />}
           />
           <Route path="/*" element={<App />} />
         </Routes>

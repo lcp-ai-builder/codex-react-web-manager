@@ -51,6 +51,8 @@ const usePagedList = ({ pageSize = 10, initialData = [], fetchPage, onError }) =
   const onErrorRef = useRef(onError);
   const itemsRef = useRef(initialData);
   const initialDataRef = useRef(initialData);
+  // 用于存储 AbortController，确保组件卸载时能正确取消请求
+  const abortControllerRef = useRef(null);
 
   useEffect(() => {
     fetchPageRef.current = fetchPage;
@@ -72,18 +74,32 @@ const usePagedList = ({ pageSize = 10, initialData = [], fetchPage, onError }) =
 
   const loadPage = useCallback(
     async (page = 1, { timeout = DEFAULT_TIMEOUT } = {}) => {
+      // 如果已有正在进行的请求，先取消它
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+
       setLoading(true);
       const controller = new AbortController();
+      abortControllerRef.current = controller;
       const timeoutId = timeout ? setTimeout(() => controller.abort(), timeout) : null;
 
       try {
         const payload = await fetchPageRef.current({ page, pageSize, signal: controller.signal });
+        // 检查请求是否已被取消（组件可能已卸载）
+        if (controller.signal.aborted) {
+          return;
+        }
         const { list, total } = parseListResponse(payload, initialDataRef.current);
         setItems(list);
         setTotalItems(total);
         setCurrentPage(page);
         return { list, total };
       } catch (error) {
+        // 如果请求被取消（包括超时或组件卸载），不执行错误回调
+        if (controller.signal.aborted && error.name === 'AbortError') {
+          return;
+        }
         if (onErrorRef.current) {
           onErrorRef.current(error, { page });
         }
@@ -96,6 +112,10 @@ const usePagedList = ({ pageSize = 10, initialData = [], fetchPage, onError }) =
         throw error;
       } finally {
         if (timeoutId) clearTimeout(timeoutId);
+        // 清理 AbortController 引用
+        if (abortControllerRef.current === controller) {
+          abortControllerRef.current = null;
+        }
         setLoading(false);
       }
     },
@@ -108,6 +128,16 @@ const usePagedList = ({ pageSize = 10, initialData = [], fetchPage, onError }) =
       // 错误已在 onError 中统一处理
     });
   }, [loadPage]);
+
+  // 组件卸载时取消正在进行的请求，防止内存泄漏
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
+    };
+  }, []);
 
   return {
     items,

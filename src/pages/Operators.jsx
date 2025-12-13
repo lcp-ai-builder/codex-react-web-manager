@@ -44,6 +44,8 @@ const statusColorScheme = {
 };
 
 const OperatorsPage = () => {
+  const toast = useToast();
+
   const {
     items: operators,
     setItems: setOperators,
@@ -102,7 +104,6 @@ const OperatorsPage = () => {
 
   const { isOpen: isAddOpen, onOpen: onAddOpen, onClose: onAddClose } = useDisclosure();
   const { isOpen: isEditOpen, onOpen: onEditOpen, onClose: onEditClose } = useDisclosure();
-  const toast = useToast();
 
   const normalizeIsOpen = (value) => (Number(value) === 1 ? 1 : 0);
 
@@ -198,6 +199,33 @@ const OperatorsPage = () => {
       });
       return;
     }
+    // 电话格式验证（简单验证：至少包含数字）
+    const phoneRegex = /^[\d\s\-\+\(\)]+$/;
+    if (!phoneRegex.test(formData.phone.trim()) || formData.phone.trim().length < 6) {
+      toast({
+        title: '请输入有效的电话号码',
+        status: 'warning',
+        position: 'top',
+        duration: 2500,
+        isClosable: true,
+      });
+      return;
+    }
+    // 邮箱格式验证（如果填写了邮箱）
+    if (formData.email && formData.email.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email.trim())) {
+        toast({
+          title: '请输入有效的邮箱地址',
+          status: 'warning',
+          position: 'top',
+          duration: 2500,
+          isClosable: true,
+        });
+        return;
+      }
+    }
+
     setIsSaving(true);
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3000);
@@ -215,6 +243,10 @@ const OperatorsPage = () => {
         },
         signal: controller.signal,
       });
+      // 检查请求是否已被取消
+      if (controller.signal.aborted) {
+        return;
+      }
       const roleInfo = rolesOptions.find((r) => r.id === formData.roleId);
       const operatorFromApi = payload?.data && typeof payload.data === 'object' ? payload.data : payload && typeof payload === 'object' ? payload : null;
       const newOperator =
@@ -242,6 +274,10 @@ const OperatorsPage = () => {
         isClosable: true,
       });
     } catch (error) {
+      // 如果请求被取消，不显示错误提示
+      if (controller.signal.aborted && error.name === 'AbortError') {
+        return;
+      }
       console.warn('新增操作员失败：', error);
       toast({
         title: '新增操作员失败',
@@ -299,6 +335,10 @@ const OperatorsPage = () => {
         isOpen: statusConfirm.nextIsOpen,
         signal: controller.signal,
       });
+      // 检查请求是否已被取消
+      if (controller.signal.aborted) {
+        return;
+      }
       const returned = payload?.data && typeof payload.data === 'object' ? payload.data : payload && typeof payload === 'object' ? payload : null;
       const merged = returned && typeof returned === 'object' ? { ...statusConfirm.operator, ...returned } : { ...statusConfirm.operator, isOpen: statusConfirm.nextIsOpen };
 
@@ -311,6 +351,10 @@ const OperatorsPage = () => {
         isClosable: true,
       });
     } catch (error) {
+      // 如果请求被取消，不显示错误提示
+      if (controller.signal.aborted && error.name === 'AbortError') {
+        return;
+      }
       console.warn('更新操作员状态失败：', error);
       toast({
         title: '更新操作员状态失败',
@@ -410,7 +454,45 @@ const OperatorsPage = () => {
   );
 
   const handleUpdate = async () => {
-    if (!editFormData.name.trim() || !editFormData.loginName.trim()) return;
+    if (!editFormData.name.trim() || !editFormData.loginName.trim()) {
+      toast({
+        title: '请填写必填项',
+        status: 'warning',
+        position: 'top',
+        duration: 2500,
+        isClosable: true,
+      });
+      return;
+    }
+    // 电话格式验证
+    if (editFormData.phone && editFormData.phone.trim()) {
+      const phoneRegex = /^[\d\s\-\+\(\)]+$/;
+      if (!phoneRegex.test(editFormData.phone.trim()) || editFormData.phone.trim().length < 6) {
+        toast({
+          title: '请输入有效的电话号码',
+          status: 'warning',
+          position: 'top',
+          duration: 2500,
+          isClosable: true,
+        });
+        return;
+      }
+    }
+    // 邮箱格式验证
+    if (editFormData.email && editFormData.email.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(editFormData.email.trim())) {
+        toast({
+          title: '请输入有效的邮箱地址',
+          status: 'warning',
+          position: 'top',
+          duration: 2500,
+          isClosable: true,
+        });
+        return;
+      }
+    }
+
     setIsUpdating(true);
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3000);
@@ -427,6 +509,10 @@ const OperatorsPage = () => {
         },
         signal: controller.signal,
       });
+      // 检查请求是否已被取消
+      if (controller.signal.aborted) {
+        return;
+      }
       const updated = payload?.data && typeof payload.data === 'object' ? payload.data : payload && typeof payload === 'object' ? payload : null;
       const merged = updated ? { ...editFormData, ...updated } : editFormData;
       const roleInfo = rolesOptions.find((r) => r.id === (merged.roleId || merged.role_id));
@@ -442,11 +528,14 @@ const OperatorsPage = () => {
         isClosable: true,
       });
     } catch (error) {
+      // 如果请求被取消，不显示错误提示
+      if (controller.signal.aborted && error.name === 'AbortError') {
+        return;
+      }
       console.warn('更新操作员失败：', error);
       toast({
         title: '更新操作员失败',
         status: 'error',
-        position: 'top',
         duration: 3000,
         isClosable: true,
       });

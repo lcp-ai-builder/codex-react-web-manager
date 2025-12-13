@@ -11,6 +11,8 @@ import { isOpenEnabled } from '@/utils/status.js';
 const PAGE_SIZE = 10; // 统一设置分页大小，方便后续联动
 
 const RegularUsersPage = () => {
+  const toast = useToast();
+
   // 通过通用分页 Hook 管理列表和分页信息，数据来源后端
   const {
     items: users,
@@ -69,7 +71,6 @@ const RegularUsersPage = () => {
   const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosure();
   const successCancelRef = useRef();
   const deleteCancelRef = useRef();
-  const toast = useToast();
 
   const tableBg = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
@@ -101,12 +102,38 @@ const RegularUsersPage = () => {
 
   // 保存数据：调用 /addNewUser 接口，并在 3 秒内无响应时给出提示
   const handleSave = async () => {
-    if (!formData.name.trim() || !formData.email.trim()) return;
+    // 表单验证：检查必填字段
+    if (!formData.name.trim() || !formData.email.trim()) {
+      toast({
+        title: '请填写必填项',
+        status: 'warning',
+        duration: 2500,
+        isClosable: true,
+      });
+      return;
+    }
+    // 简单的邮箱格式验证
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email.trim())) {
+      toast({
+        title: '请输入有效的邮箱地址',
+        status: 'warning',
+        duration: 2500,
+        isClosable: true,
+      });
+      return;
+    }
+
     setIsSaving(true);
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3000);
+    
     try {
       await addUser({ data: formData, signal: controller.signal });
+      // 检查请求是否已被取消
+      if (controller.signal.aborted) {
+        return;
+      }
       onAddClose();
       // 新用户成功添加后，前端可选择刷新列表；这里简单地插入一条在顶部
       setUsers((prev) => [
@@ -119,7 +146,11 @@ const RegularUsersPage = () => {
       ]);
       setTotalItems((prev) => prev + 1);
       onSuccessOpen();
-    } catch {
+    } catch (error) {
+      // 如果请求被取消，不显示错误提示
+      if (controller.signal.aborted && error.name === 'AbortError') {
+        return;
+      }
       toast({
         title: 'api无法访问',
         status: 'error',
@@ -314,6 +345,28 @@ const RegularUsersPage = () => {
               colorScheme="teal"
               onClick={async () => {
                 if (!selectedUser) return;
+                // 表单验证
+                if (!editFormData.name.trim() || !editFormData.email.trim()) {
+                  toast({
+                    title: '请填写必填项',
+                    status: 'warning',
+                    duration: 2500,
+                    isClosable: true,
+                  });
+                  return;
+                }
+                // 邮箱格式验证
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(editFormData.email.trim())) {
+                  toast({
+                    title: '请输入有效的邮箱地址',
+                    status: 'warning',
+                    duration: 2500,
+                    isClosable: true,
+                  });
+                  return;
+                }
+
                 setIsUpdating(true);
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 3000);
@@ -323,6 +376,10 @@ const RegularUsersPage = () => {
                     data: editFormData,
                     signal: controller.signal,
                   });
+                  // 检查请求是否已被取消
+                  if (controller.signal.aborted) {
+                    return;
+                  }
                   // 同步更新本地 users，保持列表与接口一致
                   setUsers((prev) => prev.map((user) => (user.id === selectedUser.id ? { ...user, ...editFormData } : user)));
                   toast({
@@ -333,6 +390,10 @@ const RegularUsersPage = () => {
                   });
                   onEditClose();
                 } catch (error) {
+                  // 如果请求被取消，不显示错误提示
+                  if (controller.signal.aborted && error.name === 'AbortError') {
+                    return;
+                  }
                   toast({
                     title: '更新失败',
                     status: 'error',
@@ -402,11 +463,16 @@ const RegularUsersPage = () => {
                   if (!deleteTarget) return;
                   setIsDeleting(true);
                   const controller = new AbortController();
+                  const timeoutId = setTimeout(() => controller.abort(), 3000);
                   try {
                     await deleteUser({
                       id: deleteTarget.id,
                       signal: controller.signal,
                     });
+                    // 检查请求是否已被取消
+                    if (controller.signal.aborted) {
+                      return;
+                    }
                     setUsers((prev) => prev.filter((user) => user.id !== deleteTarget.id));
                     setTotalItems((prevTotal) => {
                       const nextTotal = Math.max(0, prevTotal - 1);
@@ -426,6 +492,10 @@ const RegularUsersPage = () => {
                     setDeleteTarget(null);
                     onDeleteClose();
                   } catch (error) {
+                    // 如果请求被取消，不显示错误提示
+                    if (controller.signal.aborted && error.name === 'AbortError') {
+                      return;
+                    }
                     toast({
                       title: '删除失败',
                       status: 'error',
@@ -433,6 +503,7 @@ const RegularUsersPage = () => {
                       isClosable: true,
                     });
                   } finally {
+                    clearTimeout(timeoutId);
                     setIsDeleting(false);
                   }
                 }}
