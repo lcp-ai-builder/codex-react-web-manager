@@ -9,6 +9,8 @@
  * 注意：当前为示例数据，实际项目中应接入后端 API 获取真实数据
  */
 import { Box, Flex, Heading, Text, useColorModeValue } from '@chakra-ui/react';
+import { ResponsiveLine } from '@nivo/line';
+import { useMemo } from 'react';
 
 /**
  * 指标卡片组件
@@ -44,6 +46,37 @@ const DashboardPage = () => {
   // 主题颜色配置
   const infoBg = useColorModeValue('white', 'gray.800'); // 信息卡片背景色
   const textMuted = useColorModeValue('gray.600', 'gray.400'); // 次要文字颜色
+  const chartBg = useColorModeValue('white', 'gray.800');
+  const chartText = useColorModeValue('#4A5568', '#CBD5E0');
+  const chartGrid = useColorModeValue('#EDF2F7', '#2D3748');
+  const lineColor = useColorModeValue('#2B6CB0', '#63B3ED');
+
+  // 生成最近 8 小时（480 分钟）的访问量模拟数据
+  const visitData = useMemo(() => {
+    const points = [];
+    const start = Date.now() - 8 * 60 * 60 * 1000;
+
+    for (let i = 0; i < 480; i += 1) {
+      const timestamp = start + i * 60 * 1000;
+      const hour = new Date(timestamp).getHours(); // 24 小时制
+      const dayProfile =
+        hour < 6 ? 0.35 : hour < 10 ? 0.65 : hour < 19 ? 1 : hour < 23 ? 0.75 : 0.45; // 夜间低，白天高
+      const wave = 30 * Math.sin((i / 90) * Math.PI); // 让曲线有起伏
+      const base = 80 + 90 * dayProfile + wave;
+      const noise = Math.random() * 25;
+      points.push({
+        x: new Date(timestamp),
+        y: Math.round(base + noise),
+      });
+    }
+
+    return [
+      {
+        id: 'recent-visits',
+        data: points,
+      },
+    ];
+  }, []);
 
   return (
     <Box>
@@ -58,6 +91,76 @@ const DashboardPage = () => {
         <InfoCard title="新增用户" value="56" />
         <InfoCard title="待处理工单" value="8" />
       </Flex>
+      
+      {/* 最近 8 小时访问量趋势 */}
+      <Box mt={10} bg={chartBg} borderRadius="lg" boxShadow="sm" p={6} minH="420px">
+        <Heading size="md" mb={4}>
+          近 8 小时每分钟访问量
+        </Heading>
+        <Box height="320px">
+          <ResponsiveLine
+            data={visitData}
+            xScale={{
+              type: 'time',
+              format: 'native',
+              useUTC: false,
+              precision: 'minute',
+            }}
+            xFormat="time:%H:%M"
+            yScale={{ type: 'linear', stacked: false, min: 'auto', max: 'auto' }}
+            axisBottom={{
+              format: '%H:%M',
+              tickValues: 'every 30 minutes',
+              tickSize: 6,
+              tickPadding: 8,
+            }}
+            axisLeft={{
+              tickSize: 6,
+              tickPadding: 8,
+            }}
+            margin={{ top: 20, right: 30, bottom: 50, left: 50 }}
+            colors={[lineColor]}
+            enablePoints={false}
+            enableArea
+            areaOpacity={0.15}
+            enableSlices="x"
+            useMesh
+            crosshairType="x"
+            theme={{
+              textColor: chartText,
+              grid: {
+                line: {
+                  stroke: chartGrid,
+                  strokeWidth: 1,
+                },
+              },
+              tooltip: {
+                container: {
+                  background: chartBg,
+                  color: chartText,
+                  borderRadius: 8,
+                  boxShadow: '0 2px 10px rgba(0,0,0,0.12)',
+                },
+              },
+            }}
+            sliceTooltip={({ slice }) => {
+              const point = slice.points[0];
+              const date = point.data.x instanceof Date ? point.data.x : new Date(point.data.x);
+              const hours = date.getHours().toString().padStart(2, '0');
+              const minutes = date.getMinutes().toString().padStart(2, '0');
+              const timeLabel = `${hours}:${minutes}`;
+              return (
+                <Box p={3}>
+                  <Text fontWeight="bold" mb={1}>
+                    时间：{timeLabel}
+                  </Text>
+                  <Text color={textMuted}>访问量：{point.data.yFormatted}</Text>
+                </Box>
+              );
+            }}
+          />
+        </Box>
+      </Box>
       
       {/* 最近活动区域：占位内容，实际项目中可替换为真实的活动列表或图表 */}
       <Box mt={10} bg={infoBg} borderRadius="lg" boxShadow="sm" p={6}>
