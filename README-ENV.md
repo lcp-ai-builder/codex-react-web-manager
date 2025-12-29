@@ -2,7 +2,7 @@
 
 ## 概述
 
-项目支持在 Mac 虚拟机（mac-vm）和 WSL 两种不同的开发环境中运行，每个环境使用不同的后端服务代理地址。
+项目支持在 Mac 虚拟机（mac-vm）、Mac Podman（mac-podman）和 WSL 三种不同的开发环境中运行，每个环境使用不同的后端服务代理地址。
 
 ## 环境配置
 
@@ -14,6 +14,10 @@
 - 管理后台服务：`http://localhost:8080`
 - API 服务：`http://localhost:8181`
 
+### Mac Podman 环境（mac-podman）
+- 管理后台服务：`http://localhost:8080`
+- API 服务：`http://localhost:8181`
+
 ## 使用方法
 
 ### 方式一：使用 npm 脚本（推荐）
@@ -22,8 +26,20 @@
 # Mac 虚拟机环境
 npm run dev:mac-vm
 
+# Mac Podman 环境
+npm run dev:mac-podman
+
 # WSL 环境
 npm run dev:wsl
+
+# Mac 虚拟机环境构建
+npm run build:mac-vm
+
+# Mac Podman 环境构建
+npm run build:mac-podman
+
+# WSL 环境构建
+npm run build:wsl
 
 # 默认环境（WSL）
 npm run dev
@@ -41,6 +57,11 @@ vite --mac-vm
 npm run dev -- --wsl
 # 或
 vite --wsl
+
+# Mac Podman 环境
+npm run dev -- --mac-podman
+# 或
+vite --mac-podman
 ```
 
 ### 方式三：使用环境变量
@@ -51,6 +72,9 @@ VITE_ENV=mac-vm npm run dev
 
 # WSL 环境
 VITE_ENV=wsl npm run dev
+
+# Mac Podman 环境
+VITE_ENV=mac-podman npm run dev
 ```
 
 ## 配置修改
@@ -75,6 +99,14 @@ const ENV_CONFIGS = {
       target: 'http://localhost:8181',  // 修改这里
     },
   },
+  'mac-podman': {
+    manager: {
+      target: 'http://localhost:8080',  // 修改这里
+    },
+    api: {
+      target: 'http://localhost:8181',  // 修改这里
+    },
+  },
 };
 ```
 
@@ -89,4 +121,3 @@ const ENV_CONFIGS = {
 ```
 
 这样可以快速确认当前使用的环境配置是否正确。
-

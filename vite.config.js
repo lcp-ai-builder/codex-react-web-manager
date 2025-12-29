@@ -39,6 +39,17 @@ const ENV_CONFIGS = {
       description: 'WSL - API 服务',
     },
   },
+  'mac-podman': {
+    // Mac Podman 环境配置
+    manager: {
+      target: 'http://localhost:9011',
+      description: 'Mac Podman - 管理后台服务',
+    },
+    api: {
+      target: 'http://localhost:9022',
+      description: 'Mac Podman - API 服务',
+    },
+  },
 };
 
 /**
@@ -48,7 +59,7 @@ const ENV_CONFIGS = {
  * 支持方式：
  * 1. 命令行参数：vite --env=mac-vm 或 vite --env=wsl
  * 2. 环境变量：VITE_ENV=mac-vm vite 或 VITE_ENV=wsl vite
- * 3. 默认值：wsl
+ * 3. 默认值：mac-podman
  */
 function getCurrentEnv() {
   // 从命令行参数获取（例如：--env=mac-vm 或 --mac-vm）
@@ -67,6 +78,9 @@ function getCurrentEnv() {
   if (args.includes('--mac-vm')) {
     return 'mac-vm';
   }
+  if (args.includes('--mac-podman')) {
+    return 'mac-podman';
+  }
   if (args.includes('--wsl')) {
     return 'wsl';
   }
@@ -77,8 +91,8 @@ function getCurrentEnv() {
     return envFromVar;
   }
 
-  // 默认使用 wsl 环境
-  return 'wsl';
+  // 默认使用 mac-podman 环境
+  return 'mac-podman';
 }
 
 // 获取当前环境配置
